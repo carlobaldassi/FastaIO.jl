@@ -51,10 +51,10 @@ end
 FastaReader(filename::String) = FastaReader{ASCIIString}(filename)
 FastaReader(io::IO) = FastaReader{ASCIIString}(io)
 
-function FastaReader(f::Function, filename::String)
-    local fr::FastaReader
+function FastaReader{T}(f::Function, filename::String)
+    local fr::FastaReader{T}
     try
-        fr = FastaReader(filename)
+        fr = FastaReader{T}(filename)
         f(fr)
     finally
         close(fr)
@@ -143,17 +143,17 @@ function start(fr::FastaReader)
     rewind(fr)
     readline(fr)
     if fr.lbuf_sz == 0
-        error("empty fasta file")
+        error("empty FASTA file")
     end
     return
 end
 done(fr::FastaReader, x::Nothing) = fr.is_eof
 function _next_step(fr::FastaReader)
     if fr.lbuffer[1] != '>'
-        error("invalid fasta file: seq name does not start with '>'")
+        error("invalid FASTA file: description does not start with '>'")
     end
     if length(fr.lbuffer) == 1
-        error("invalid fasta file: empty seq name")
+        error("invalid FASTA file: empty description")
     end
     name = ascii(fr.lbuffer[2:fr.lbuf_sz])
     fr.mbuf_sz = 0
@@ -204,7 +204,7 @@ function readentry(fr::FastaReader)
     if fr.num_parsed == 0
         readline(fr)
         if fr.lbuf_sz == 0
-            error("empty fasta file")
+            error("empty FASTA file")
         end
     end
     item, _ = next(fr, nothing)
@@ -282,6 +282,8 @@ function write(fw::FastaWriter, c)
         elseif ch == '>'
             error("description must span a single line (entry $(fw.entry) of FASTA input)")
         end
+    elseif fw.in_seq && ch == '>'
+        error("character '>' not allowed in sequence data (entry $(fw.entry) of FASTA input)")
     end
     if fw.pos == 80
         if !fw.in_seq
