@@ -245,7 +245,7 @@ type FastaWriter
     end
 end
 
-FastaWriter() = FastaWriter(OUTPUT_STREAM)
+FastaWriter() = FastaWriter(STDOUT)
 
 function FastaWriter(f::Function, args...)
     local fw::FastaWriter
@@ -376,7 +376,7 @@ function writefasta(io::IO, data)
         writefastaseq(io, seq, entry)
     end
 end
-writefasta(data) = writefasta(OUTPUT_STREAM, data)
+writefasta(data) = writefasta(STDOUT, data)
 
 function writefasta(filename::String, data, mode::String = "w")
     if endswith(filename, ".gz")
