@@ -329,10 +329,14 @@ function writeentry(fw::FastaWriter, desc::String, seq)
 end
 
 function close(fw::FastaWriter)
-    write(fw.f, '\n')
+    try
+        write(fw.f, '\n')
+        flush(fw.f)
+    catch err
+        isa(err, EOFError) || rethrow(err)
+    end
     fw.pos = 0
     fw.parsed_nl = true
-    flush(fw.f)
     fw.own_f && close(fw.f)
     return
 end
