@@ -121,7 +121,7 @@ Reading files
 
    Other ways to read out the data are via the :func:`readentry` and :func:`readall` functions.
 
-.. function:: FastaReader{T}(f::Function, filename::String)
+.. function:: FastaReader(f::Function, filename::String, [sequence_type::Type = ASCIIString])
 
    This format of the constructor is useful for do-notation, i.e.::
 

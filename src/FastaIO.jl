@@ -51,10 +51,9 @@ end
 FastaReader(filename::String) = FastaReader{ASCIIString}(filename)
 FastaReader(io::IO) = FastaReader{ASCIIString}(io)
 
-function FastaReader{T}(f::Function, filename::String)
-    local fr::FastaReader{T}
+function FastaReader(f::Function, filename::String, T::Type=ASCIIString)
+    fr = FastaReader{T}(filename)
     try
-        fr = FastaReader{T}(filename)
         f(fr)
     finally
         close(fr)
@@ -248,9 +247,8 @@ end
 FastaWriter() = FastaWriter(STDOUT)
 
 function FastaWriter(f::Function, args...)
-    local fw::FastaWriter
+    fw = FastaWriter(args...)
     try
-        fw = FastaWriter(args...)
         f(fw)
     finally
         close(fw)
