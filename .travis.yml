@@ -1,14 +1,22 @@
 language: cpp
-compiler: 
-    - clang
+compiler:
+  - clang
 notifications:
-    email: false
+  email: false
+env:
+  matrix:
+    - JULIAVERSION="juliareleases"
+    - JULIAVERSION="julianightlies"
 before_install:
-    - sudo add-apt-repository ppa:staticfloat/julia-deps -y
-    - sudo add-apt-repository ppa:staticfloat/julianightlies -y
-    - sudo apt-get update -qq -y
-    - sudo apt-get install julia -y
+  - sudo add-apt-repository ppa:staticfloat/julia-deps -y
+  - sudo add-apt-repository ppa:staticfloat/${JULIAVERSION} -y
+  - sudo apt-get update -qq -y
+  - sudo apt-get install libpcre3-dev julia -y
+  - if [[ -a .git/shallow ]]; then git fetch --unshallow; fi
 script:
-    - julia -e 'Pkg.init(); run(`ln -s $(pwd()) $(Pkg.dir())/`); Pkg.resolve()'
-    - julia -e 'using FastaIO; @assert isdefined(:FastaIO); @assert typeof(FastaIO) === Module'
-    - julia test/runtests.jl
+  - julia -e 'Pkg.init(); run(`ln -s $(pwd()) $(Pkg.dir("FastaIO"))`); Pkg.pin("FastaIO"); Pkg.resolve()'
+  - julia -e 'using FastaIO; @assert isdefined(:FastaIO); @assert typeof(FastaIO) === Module'
+  - if [ $JULIAVERSION = "julianightlies" ]; then julia --code-coverage test/runtests.jl; fi
+  - if [ $JULIAVERSION = "juliareleases" ]; then julia test/runtests.jl; fi
+after_success:
+  - if [ $JULIAVERSION = "julianightlies" ]; then julia -e 'cd(Pkg.dir("FastaIO")); Pkg.add("Coverage"); using Coverage; Coveralls.submit(Coveralls.process_folder())'; fi
