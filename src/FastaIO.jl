@@ -151,7 +151,7 @@ function _next_step(fr::FastaReader)
     if fr.lbuffer[1] != '>'
         error("invalid FASTA file: description does not start with '>'")
     end
-    if length(fr.lbuffer) == 1
+    if fr.lbuf_sz == 1
         error("invalid FASTA file: empty description")
     end
     name = ascii(fr.lbuffer[2:fr.lbuf_sz])
@@ -222,13 +222,15 @@ readfasta(io::IO, T::Type=ASCIIString) = readall(FastaReader{T}(io))
 type FastaWriter
     f::IO
     in_seq::Bool
+    entry_chars::Int
+    desc_chars::Int
     parsed_nl::Bool
     pos::Int
     entry::Int
     own_f::Bool
     at_start::Bool
     function FastaWriter(io::IO)
-        fw = new(io, false, false, 0, 1, false, true)
+        fw = new(io, false, 0, 0, false, 0, 1, false, true)
         finalizer(fw, close)
         return fw
     end
@@ -238,7 +240,7 @@ type FastaWriter
         else
             of = open
         end
-        fw = new(of(filename, mode), false, false, 0, 1, true, true)
+        fw = new(of(filename, mode), false, 0, 0, false, 0, 1, true, true)
         finalizer(fw, close)
         return fw
     end
@@ -258,27 +260,28 @@ end
 function write(fw::FastaWriter, c)
     ch = char(c)
     isascii(ch) || error("invalid (non-ASCII) character: $c (entry $(fw.entry) of FASTA input)")
-    c8 = uint8(c)
-    if ch == '\n'
+    if ch == '\n' && !fw.at_start
         fw.parsed_nl = true
         if !fw.in_seq
+            fw.desc_chars == 1 && error("empty description (entry $(fw.entry) of FASTA input")
             write(fw.f, '\n')
             fw.pos = 0
             fw.in_seq = true
         end
     end
-    isspace(ch) && return
+    isspace(ch) && (fw.at_start || fw.in_seq || fw.desc_chars <= 1) && return
+    fw.at_start && ch != '>' && error("no desctiption given (entry $(fw.entry) of FASTA input")
     fw.at_start = false
     if fw.parsed_nl
-        if fw.in_seq
-            if ch == '>'
-                write(fw.f, '\n')
-                fw.in_seq = false
-                fw.pos = 0
-                fw.entry += 1
-            end
-        elseif ch == '>'
-            error("description must span a single line (entry $(fw.entry) of FASTA input)")
+        @assert fw.in_seq
+        if ch == '>'
+            fw.entry_chars > 0 || error("description must span a single line (entry $(fw.entry) of FASTA input)")
+            write(fw.f, '\n')
+            fw.in_seq = false
+            fw.pos = 0
+            fw.entry += 1
+            fw.entry_chars = 0
+            fw.desc_chars = 0
         end
     elseif fw.in_seq && ch == '>'
         error("character '>' not allowed in sequence data (entry $(fw.entry) of FASTA input)")
@@ -293,6 +296,11 @@ function write(fw::FastaWriter, c)
     end
     write(fw.f, ch)
     fw.pos += 1
+    if fw.in_seq
+        fw.entry_chars += 1
+    else
+        fw.desc_chars += 1
+    end
     fw.parsed_nl = false
     return
 end
@@ -314,17 +322,18 @@ function writeentry(fw::FastaWriter, desc::String, seq)
     !fw.at_start && write(fw, '\n')
     desc = strip(ascii(desc))
     if search(desc, '\n') != 0
-        error("newlines are not allowed within description (entry $entry of FASTA input)")
+        error("newlines are not allowed within description (entry $(fw.entry+1) of FASTA input)")
     end
     write(fw, '>')
-    write(fw, desc)
+    write(fw, strip(desc))
     write(fw, '\n')
     #write(fw, seq)
     #write(fw, '\n')
-    writefastaseq(fw.f, seq, fw.entry, false)
+    fw.entry_chars = writefastaseq(fw.f, seq, fw.entry, false)
     fw.in_seq = true
     fw.parsed_nl = false
     fw.pos = 0
+    fw.entry_chars > 0 || error("empty sequence data (entry $(fw.entry) of FASTA input)")
     return
 end
 
@@ -347,20 +356,22 @@ end
 
 function writefastaseq(io::IO, seq, entry::Int, nl::Bool = true)
     i = 0
+    entry_chars = 0
     for c in seq
         if i == 80
             write(io, '\n')
             i = 0
         end
-        c8 = uint8(c)
         ch = char(c)
         isascii(ch) || error("invalid (non-ASCII) character: $c (entry $entry of FASTA input)")
         isspace(ch) && continue
-        write(io, c)
+        ch != '>' || error("character '>' not allowed in sequence data (entry $entry of FASTA input)")
+        write(io, ch)
         i += 1
+        entry_chars += 1
     end
     nl && write(io, '\n')
-    return
+    return entry_chars
 end
 
 function writefasta(io::IO, data)
@@ -368,6 +379,9 @@ function writefasta(io::IO, data)
     for (desc, seq) in data
         entry += 1
         desc = strip(ascii(desc))
+        if isempty(desc)
+            error("empty description (entry $entry of FASTA input")
+        end
         if search(desc, '\n') != 0
             error("newlines are not allowed within description (entry $entry of FASTA input)")
         end
@@ -375,7 +389,8 @@ function writefasta(io::IO, data)
             warn("description line longer than 80 characters (entry $entry of FASTA input)")
         end
         println(io, ">", desc)
-        writefastaseq(io, seq, entry)
+        entry_chars = writefastaseq(io, seq, entry)
+        entry_chars > 0 || error("empty sequence data (entry $entry of FASTA input)")
     end
 end
 writefasta(data) = writefasta(STDOUT, data)
