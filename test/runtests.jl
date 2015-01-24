@@ -13,7 +13,7 @@ macro test_throws_02(args...)
     end
 end
 
-const fastadata_ascii = {
+const fastadata_ascii = Any[
     ("A0ADS9_STRAM/3-104",
      "-------------------------------------------STVELTKEN-F--D-Q-" *
      "-T-V----T-D---------N-----------E--F-V--LI--------D-----F--W" *
@@ -61,7 +61,7 @@ const fastadata_ascii = {
      "-----S------V------P-T---M--V------Y---L-------K---D------G-" *
      "---K----V-AS-----------TYA-AT----DE-PE-KLTHWMNK-V-----------" *
      "------------------------------------------------------------" *
-     "---------")}
+     "---------")]
 
 const fastadata_uint8 = map(x->(x[1],convert(Vector{Uint8}, x[2])), fastadata_ascii)
 const fastadata_char = map(x->(x[1],convert(Vector{Char}, x[2])), fastadata_ascii)
@@ -107,7 +107,7 @@ function test_fastawrite(infile, outfile, fastadata)
 
     # one element at a time mode
     FastaWriter(outfile) do fw
-        fd_plain = {}
+        fd_plain = Any[]
         for (desc, seq) in fastadata
             push!(fd_plain, ">" * desc)
             i = 0
