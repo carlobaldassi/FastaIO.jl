@@ -154,8 +154,8 @@ end
 for i in 1:4
     infile = joinpath(dirname(Base.source_path()), "invalid_test_$i.fasta.gz")
 
-    @test_throws_02 ErrorException readfasta(infile)
-    @test_throws_02 ErrorException FastaReader(infile) do fr
+    @test_throws_02 Exception readfasta(infile)
+    @test_throws_02 Exception FastaReader(infile) do fr
         while !eof(fr)
             desc, seq = readentry(fr)
         end
@@ -189,7 +189,7 @@ const invalid_fastadata_entries = [("DE\nSC", "DATA" ),
 
 for (desc, data) in invalid_fastadata_entries
     try
-        @test_throws_02 ErrorException FastaWriter(outfile) do fw
+        @test_throws_02 Exception FastaWriter(outfile) do fw
             writeentry(fw, desc, data)
         end
     finally
@@ -199,7 +199,7 @@ end
 
 for invalid_fastadata in [[ife] for ife in invalid_fastadata_entries]
     try
-        @test_throws_02 ErrorException writefasta(outfile, invalid_fastadata)
+        @test_throws_02 Exception writefasta(outfile, invalid_fastadata)
     finally
         isfile(outfile) && rm(outfile)
     end
