@@ -216,7 +216,11 @@ function show{T}(io::IO, fr::FastaReader{T})
     print(io, "FastaReader(input=\"$(fr.f)\", out_type=$T, num_parsed=$(fr.num_parsed), eof=$(fr.is_eof))")
 end
 
-readfasta(filename::String, T::Type=ASCIIString) = readall(FastaReader{T}(filename))
+function readfasta(filename::String, T::Type=ASCIIString)
+    FastaReader(filename, T) do fr
+        readall(fr)
+    end
+end
 readfasta(io::IO, T::Type=ASCIIString) = readall(FastaReader{T}(io))
 
 type FastaWriter
