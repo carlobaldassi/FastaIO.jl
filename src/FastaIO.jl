@@ -107,14 +107,18 @@ function readline(fr::FastaReader)
             read_chunk(fr::FastaReader)
         end
         i = fr.rbuf_pos
+        cr = false
         while i <= fr.rbuf_sz
-            if fr.rbuffer[i] == '\n'
+            c = fr.rbuffer[i]
+            if c == '\n'
                 found = true
                 break
+            else
+                cr = (c == '\r')
             end
             i += 1
         end
-        i -= 1
+        i -= 1 + cr
         chunk_len = i - fr.rbuf_pos + 1
         free_sbuf = length(fr.lbuffer) - fr.lbuf_sz
         gap = chunk_len - free_sbuf
@@ -126,7 +130,7 @@ function readline(fr::FastaReader)
         copy!(fr.lbuffer, fr.lbuf_sz + 1, fr.rbuffer, fr.rbuf_pos, chunk_len)
         fr.lbuf_sz += chunk_len
 
-        i += 2
+        i += 2 + cr
         if i > fr.rbuf_sz
             i = 0
         end
