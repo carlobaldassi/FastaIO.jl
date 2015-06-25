@@ -266,7 +266,7 @@ function FastaWriter(f::Function, args...)
 end
 
 function write(fw::FastaWriter, c)
-    ch = char(c)
+    ch = convert(Char, c)
     isascii(ch) || error("invalid (non-ASCII) character: $c (entry $(fw.entry) of FASTA input)")
     if ch == '\n' && !fw.at_start
         fw.parsed_nl = true
@@ -370,7 +370,7 @@ function writefastaseq(io::IO, seq, entry::Int, nl::Bool = true)
             write(io, '\n')
             i = 0
         end
-        ch = char(c)
+        ch = convert(Char, c)
         isascii(ch) || error("invalid (non-ASCII) character: $c (entry $entry of FASTA input)")
         isspace(ch) && continue
         ch != '>' || error("character '>' not allowed in sequence data (entry $entry of FASTA input)")
