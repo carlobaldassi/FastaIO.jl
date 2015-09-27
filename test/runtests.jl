@@ -1,5 +1,6 @@
 module FastaTests
 
+using Compat
 using FastaIO
 using GZip
 using Base.Test
@@ -63,7 +64,7 @@ const fastadata_ascii = Any[
      "------------------------------------------------------------" *
      "---------")]
 
-const fastadata_uint8 = map(x->(x[1],convert(Vector{Uint8}, x[2])), fastadata_ascii)
+const fastadata_uint8 = map(x->(x[1],convert(Vector{UInt8}, x[2])), fastadata_ascii)
 const fastadata_char = map(x->(x[1],convert(Vector{Char}, x[2])), fastadata_ascii)
 
 function test_fastaread(T::Type, infile, fastadata)
@@ -91,7 +92,7 @@ function test_fastawrite(infile, outfile, fastadata)
     FastaWriter(outfile) do fw
         gzopen(infile) do f
             while !eof(f)
-                write(fw, read(f, Uint8))
+                write(fw, read(f, UInt8))
             end
         end
     end
@@ -137,7 +138,7 @@ for suffix in ["", ".gz", ".win", ".win.gz"]
     infile = joinpath(dirname(Base.source_path()), "test.fasta" * suffix)
     outfile = joinpath(dirname(Base.source_path()), "test_out.fasta" * suffix)
 
-    for (T, fastadata) in [(Vector{Uint8}, fastadata_uint8),
+    for (T, fastadata) in [(Vector{UInt8}, fastadata_uint8),
                            (Vector{Char}, fastadata_char),
                            (ASCIIString, fastadata_ascii),
                            (UTF8String, fastadata_ascii)]
@@ -171,7 +172,7 @@ for i in 2:6
         @test_throws_02 ErrorException FastaWriter(outfile) do fw
             gzopen(infile) do f
                 while !eof(f)
-                    write(fw, read(f, Uint8))
+                    write(fw, read(f, UInt8))
                 end
             end
         end
