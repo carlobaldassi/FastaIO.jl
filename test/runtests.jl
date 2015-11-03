@@ -5,15 +5,6 @@ using FastaIO
 using GZip
 using Base.Test
 
-# backwards-compatible test_throws (works in julia 0.2)
-macro test_throws_02(args...)
-    if VERSION >= v"0.3-"
-        :(@test_throws($(esc(args[1])), $(esc(args[2]))))
-    else
-        :(@test_throws($(esc(args[2]))))
-    end
-end
-
 const fastadata_ascii = Any[
     ("A0ADS9_STRAM/3-104",
      "-------------------------------------------STVELTKEN-F--D-Q-" *
@@ -155,8 +146,8 @@ end
 for i in 1:4
     infile = joinpath(dirname(Base.source_path()), "invalid_test_$i.fasta.gz")
 
-    @test_throws_02 Exception readfasta(infile)
-    @test_throws_02 Exception FastaReader(infile) do fr
+    @test_throws Exception readfasta(infile)
+    @test_throws Exception FastaReader(infile) do fr
         while !eof(fr)
             desc, seq = readentry(fr)
         end
@@ -169,7 +160,7 @@ for i in 2:6
     infile = joinpath(dirname(Base.source_path()), "invalid_test_$i.fasta.gz")
 
     try
-        @test_throws_02 ErrorException FastaWriter(outfile) do fw
+        @test_throws ErrorException FastaWriter(outfile) do fw
             gzopen(infile) do f
                 while !eof(f)
                     write(fw, read(f, UInt8))
@@ -190,7 +181,7 @@ const invalid_fastadata_entries = [("DE\nSC", "DATA" ),
 
 for (desc, data) in invalid_fastadata_entries
     try
-        @test_throws_02 Exception FastaWriter(outfile) do fw
+        @test_throws Exception FastaWriter(outfile) do fw
             writeentry(fw, desc, data)
         end
     finally
@@ -200,7 +191,7 @@ end
 
 for invalid_fastadata in [[ife] for ife in invalid_fastadata_entries]
     try
-        @test_throws_02 Exception writefasta(outfile, invalid_fastadata)
+        @test_throws Exception writefasta(outfile, invalid_fastadata)
     finally
         isfile(outfile) && rm(outfile)
     end
