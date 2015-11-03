@@ -83,8 +83,8 @@ The sequence storage type
 When reading FASTA files, the container type used to store the sequence data can be chosen (as an optional
 argument to :func:`readfasta` or as a parametric type of :obj:`FastaReader`). The default is
 ``ASCIIString``, which is the most memory-efficient and the fastest; another performance-optimal option is
-``Vector{Uint8}``, which is a less friendly representation, but has the advantage of being mutable. Any
-other container ``T`` for which ``convert(::Type{T}, ::Vector{Uint8})`` is defined can be used (e.g.
+``Vector{UInt8}``, which is a less friendly representation, but has the advantage of being mutable. Any
+other container ``T`` for which ``convert(::Type{T}, ::Vector{UInt8})`` is defined can be used (e.g.
 ``Vector{Char}``, or a more specialized ``Vector{AminoAcid}`` if you use the
 `BioSeq <https://github.com/diegozea/BioSeq.jl>`_ package), but the conversion will generally slightly
 reduce the performance.
@@ -115,7 +115,7 @@ Reading files
        end
 
    As shown, the iterator returns a tuple containing the description (always an ``ASCIIString``) and the data (whose
-   type is set when creating the ``FastaReader`` object (e.g. ``FastaReader{Vector{Uint8}}(filename)``).
+   type is set when creating the ``FastaReader`` object (e.g. ``FastaReader{Vector{UInt8}}(filename)``).
 
    The ``FastaReader`` type has a field ``num_parsed`` which contains the number of entries parsed so far.
 
@@ -180,7 +180,7 @@ Writing files
     :ref:`this section <fasta-format>`. The ``data`` can be anything which is iterable and which produces
     ``(description, sequence)`` tuples upon iteration, where the ``description`` must be convertible to
     an ``ASCIIString`` and the ``sequence`` can be any iterable object which yields elements convertible
-    to ASCII characters (e.g. an ``ASCIIString``, a ``Vector{Uint8}`` etc.).
+    to ASCII characters (e.g. an ``ASCIIString``, a ``Vector{UInt8}`` etc.).
 
     Examples::
 
@@ -193,7 +193,7 @@ Writing files
     file.
 
 .. function:: FastaWriter(filename::String, [mode::String = "w"])
-              FastaWriter([io::IO = OUTPUT_STREAM])
+              FastaWriter([io::IO = STDOUT])
               FastaWriter(f::Function, args...)
 
     This creates an object which is able to write formatted FASTA files which conform to the specifications
