@@ -136,9 +136,7 @@ function readline(fr::FastaReader)
             i = 0
         end
         fr.rbuf_pos = i
-        if found
-            break
-        end
+        found && break
     end
     return
 end
@@ -163,7 +161,7 @@ function _next_step(fr::FastaReader)
     fr.mbuf_sz = 0
     while true
         readline(fr)
-        if fr.is_eof || fr.lbuffer[1] == '>'
+        if fr.lbuf_sz == 0 || fr.lbuffer[1] == '>'
             break
         end
         gap = fr.lbuf_sz - (length(fr.mbuffer) - fr.mbuf_sz)
