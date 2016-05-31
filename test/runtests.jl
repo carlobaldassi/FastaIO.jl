@@ -119,20 +119,38 @@ function test_fastawrite(infile, outfile, fastadata)
     @test readfasta(outfile) == fastadata
 
     # writefasta (dict)
-    fd_dict = [desc=>seq for (desc, seq) in fastadata]
+    ## how to do this in a backward-compatible way?
+    ##   fd_dict = Dict(desc=>seq for (desc, seq) in fastadata)
+    fd_dict = Dict(); for (desc, seq) in fastadata; fd_dict[desc]=seq; end
     writefasta(outfile, fd_dict)
     @test sort!(readfasta(outfile)) == sort(fastadata)
     return
+end
+
+# typealiases added only to avoid warnings
+if VERSION < v"0.5-"
+    typealias String UTF8String
+else
+    typealias UTF8String String
+    typealias ASCIIString String
 end
 
 for suffix in ["", ".gz", ".win", ".win.gz", ".no_eof", ".no_eof.gz"]
     infile = joinpath(dirname(Base.source_path()), "test.fasta" * suffix)
     outfile = joinpath(dirname(Base.source_path()), "test_out.fasta" * suffix)
 
-    for (T, fastadata) in [(Vector{UInt8}, fastadata_uint8),
-                           (Vector{Char}, fastadata_char),
-                           (ASCIIString, fastadata_ascii),
-                           (UTF8String, fastadata_ascii)]
+    if VERSION < v"0.5-"
+        tests = [(Vector{UInt8}, fastadata_uint8),
+                 (Vector{Char}, fastadata_char),
+                 (ASCIIString, fastadata_ascii),
+                 (UTF8String, fastadata_ascii)]
+    else
+        tests = [(Vector{UInt8}, fastadata_uint8),
+                 (Vector{Char}, fastadata_char),
+                 (String, fastadata_ascii)]
+    end
+
+    for (T, fastadata) in tests
         test_fastaread(T, infile, fastadata)
     end
 
