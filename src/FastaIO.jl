@@ -17,6 +17,9 @@ export
 import Base.start, Base.done, Base.next, Base.readall,
        Base.close, Base.show, Base.eof, Base.write
 
+import Compat: String
+
+
 const fasta_buffer_size = 4096
 
 type FastaReader{T}
@@ -51,20 +54,10 @@ type FastaReader{T}
     end
 end
 
-# typealiases added only to avoid warnings
-if VERSION < v"0.5-"
-    typealias String UTF8String
-    const ST = ASCIIString
-else
-    typealias UTF8String String
-    typealias ASCIIString String
-    const ST = String
-end
+FastaReader(filename::AbstractString) = FastaReader{String}(filename)
+FastaReader(io::IO) = FastaReader{String}(io)
 
-FastaReader(filename::AbstractString) = FastaReader{ST}(filename)
-FastaReader(io::IO) = FastaReader{ST}(io)
-
-function FastaReader(f::Function, filename::AbstractString, T::Type=ST)
+function FastaReader(f::Function, filename::AbstractString, T::Type=String)
     fr = FastaReader{T}(filename)
     try
         f(fr)
@@ -123,7 +116,7 @@ function readline(fr::FastaReader)
         cr = false
         while i <= fr.rbuf_sz
             c = fr.rbuffer[i]
-            @compat if c == UInt8('\n')
+            if c == UInt8('\n')
                 found = true
                 break
             else
@@ -161,20 +154,16 @@ function start(fr::FastaReader)
     end
     return
 end
-@compat done(fr::FastaReader, x::Void) = fr.is_eof
-@compat function _next_step(fr::FastaReader)
+done(fr::FastaReader, x::Void) = fr.is_eof
+function _next_step(fr::FastaReader)
     if fr.lbuffer[1] != UInt8('>')
         error("invalid FASTA file: description does not start with '>'")
     end
     if fr.lbuf_sz == 1
         error("invalid FASTA file: empty description")
     end
-    if VERSION < v"0.5-"
-        name = ascii(fr.lbuffer[2:fr.lbuf_sz])
-    else
-        name = String(fr.lbuffer[2:fr.lbuf_sz])
-        isascii(name) || error("invalid non-ASCII description in FASTA file")
-    end
+    name = String(fr.lbuffer[2:fr.lbuf_sz])
+    isascii(name) || error("invalid non-ASCII description in FASTA file")
     fr.mbuf_sz = 0
     while true
         readline(fr)
@@ -196,28 +185,19 @@ function _next(fr::FastaReader{Vector{UInt8}})
     fr.num_parsed += 1
     return (name, fr.mbuffer[1:fr.mbuf_sz])
 end
-if VERSION < v"0.5-"
-    function _next(fr::FastaReader{ASCIIString})
-        name = _next_step(fr)
-        out_str = ccall(:jl_pchar_to_string, ByteString, (Ptr{UInt8},Int), fr.mbuffer, fr.mbuf_sz)
-        fr.num_parsed += 1
-        return (name, out_str)
-    end
-else
-    function _next(fr::FastaReader{String})
-        name = _next_step(fr)
-        out_str = ccall(:jl_pchar_to_string, Ref{String}, (Ptr{UInt8},Int), fr.mbuffer, fr.mbuf_sz)
-        fr.num_parsed += 1
-        return (name, out_str)
-    end
+function _next(fr::FastaReader{String})
+    name = _next_step(fr)
+    out_str = ccall(:jl_pchar_to_string, Ref{String}, (Ptr{UInt8},Int), fr.mbuffer, fr.mbuf_sz)
+    fr.num_parsed += 1
+    return (name, out_str)
 end
 function _next{T}(fr::FastaReader{T})
     name = _next_step(fr)
     fr.num_parsed += 1
-    return (name, convert(T, fr.mbuffer[1:fr.mbuf_sz]))
+    return (name, T(fr.mbuffer[1:fr.mbuf_sz]))
 end
 
-@compat next(fr::FastaReader, x::Void) = (_next(fr), nothing)
+next(fr::FastaReader, x::Void) = (_next(fr), nothing)
 
 function readall(fr::FastaReader)
     ret = Any[]
@@ -245,12 +225,12 @@ function show{T}(io::IO, fr::FastaReader{T})
     print(io, "FastaReader(input=\"$(fr.f)\", out_type=$T, num_parsed=$(fr.num_parsed), eof=$(fr.is_eof))")
 end
 
-function readfasta(filename::AbstractString, T::Type=ST)
+function readfasta(filename::AbstractString, T::Type=String)
     FastaReader(filename, T) do fr
         readall(fr)
     end
 end
-readfasta(io::IO, T::Type=ST) = readall(FastaReader{T}(io))
+readfasta(io::IO, T::Type=String) = readall(FastaReader{T}(io))
 
 type FastaWriter
     f::IO
@@ -353,12 +333,8 @@ end
 
 function writeentry(fw::FastaWriter, desc::AbstractString, seq)
     !fw.at_start && write(fw, '\n')
-    if VERSION < v"0.5-"
-        desc = strip(ascii(desc))
-    else
-        desc = strip(String(desc))
-        isascii(desc) || error("description must be ASCCII (entry $(fw.entry+1) of FASTA input)")
-    end
+    desc = strip(String(desc))
+    isascii(desc) || error("description must be ASCCII (entry $(fw.entry+1) of FASTA input)")
     if search(desc, '\n') != 0
         error("newlines are not allowed within description (entry $(fw.entry+1) of FASTA input)")
     end
@@ -416,12 +392,8 @@ function writefasta(io::IO, data)
     entry = 0
     for (desc, seq) in data
         entry += 1
-        if VERSION < v"0.5-"
-            desc = strip(ascii(desc))
-        else
-            desc = strip(String(desc))
-            isascii(desc) || error("description must be ASCCII (entry $entry of FASTA input)")
-        end
+        desc = strip(String(desc))
+        isascii(desc) || error("description must be ASCCII (entry $entry of FASTA input)")
         if isempty(desc)
             error("empty description (entry $entry of FASTA input")
         end
