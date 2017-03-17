@@ -1,11 +1,8 @@
 module FastaTests
 
-using Compat
 using FastaIO
 using GZip
 using Base.Test
-
-import Compat: String
 
 const fastadata_ascii = Any[
     ("A0ADS9_STRAM/3-104",

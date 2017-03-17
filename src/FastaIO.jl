@@ -2,7 +2,6 @@ __precompile__()
 
 module FastaIO
 
-using Compat
 using GZip
 
 export
@@ -16,9 +15,6 @@ export
 
 import Base.start, Base.done, Base.next, Base.readall,
        Base.close, Base.show, Base.eof, Base.write
-
-import Compat: String
-
 
 const fasta_buffer_size = 4096
 
