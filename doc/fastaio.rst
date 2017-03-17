@@ -119,7 +119,7 @@ Reading files
 
    The ``FastaReader`` type has a field ``num_parsed`` which contains the number of entries parsed so far.
 
-   Other ways to read out the data are via the :func:`readentry` and :func:`readall` functions.
+   Other ways to read out the data are via the :func:`readentry` and :func:`readstring` functions.
 
 .. function:: FastaReader(f::Function, filename::String, [sequence_type::Type = ASCIIString])
 
@@ -142,9 +142,9 @@ Reading files
 
    See also the :func:`eof` function.
 
-.. function:: readall(fr::FastaReader)
+.. function:: readstring(fr::FastaReader)
 
-   This function extends :func:`Base.readall`: it parses a whole FASTA file at once, and returns an array of
+   This function extends :func:`Base.readstring`: it parses a whole FASTA file at once, and returns an array of
    tuples, each one containing the description and the sequence (see also the :func:`readfasta` function).
 
 .. function:: rewind(fr::FastaReader)

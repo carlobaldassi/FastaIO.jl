@@ -13,7 +13,7 @@ export
     writeentry,
     writefasta
 
-import Base.start, Base.done, Base.next, Base.readall,
+import Base.start, Base.done, Base.next, Base.readstring,
        Base.close, Base.show, Base.eof, Base.write
 
 const fasta_buffer_size = 4096
@@ -32,21 +32,23 @@ type FastaReader{T}
     mbuffer::Vector{UInt8} # multi-line buffer
     mbuf_sz::Int           # multi-line buffer size
     own_f::Bool
-    function FastaReader(filename::AbstractString)
-        fr = new(0, gzopen(filename), false,
-            Array(UInt8, fasta_buffer_size), 0, 0,
-            Array(UInt8, fasta_buffer_size), 0,
-            Array(UInt8, fasta_buffer_size), 0,
-            true)
+    # function FastaReader{T}(filename::AbstractString) where T # TODO use this when 0.5 support is dropped
+    function (::Type{FastaReader{T}}){T}(filename::AbstractString)
+        fr = new{T}(0, gzopen(filename), false,
+                    Array{UInt8}(fasta_buffer_size), 0, 0,
+                    Array{UInt8}(fasta_buffer_size), 0,
+                    Array{UInt8}(fasta_buffer_size), 0,
+                    true)
         finalizer(fr, close)
         return fr
     end
-    function FastaReader(io::IO)
-        new(0, io, false,
-            Array(UInt8, fasta_buffer_size), 0, 0,
-            Array(UInt8, fasta_buffer_size), 0,
-            Array(UInt8, fasta_buffer_size), 0,
-            false)
+    # function FastaReader{T}(io::IO) where {T} # TODO use this when 0.5 support is dropped
+    function (::Type{FastaReader{T}}){T}(io::IO)
+        new{T}(0, io, false,
+               Array{UInt8}(fasta_buffer_size), 0, 0,
+               Array{UInt8}(fasta_buffer_size), 0,
+               Array{UInt8}(fasta_buffer_size), 0,
+               false)
     end
 end
 
@@ -195,7 +197,7 @@ end
 
 next(fr::FastaReader, x::Void) = (_next(fr), nothing)
 
-function readall(fr::FastaReader)
+function readstring(fr::FastaReader)
     ret = Any[]
     for item in fr
         push!(ret, item)
@@ -223,10 +225,10 @@ end
 
 function readfasta(filename::AbstractString, T::Type=String)
     FastaReader(filename, T) do fr
-        readall(fr)
+        readstring(fr)
     end
 end
-readfasta(io::IO, T::Type=String) = readall(FastaReader{T}(io))
+readfasta(io::IO, T::Type=String) = readstring(FastaReader{T}(io))
 
 type FastaWriter
     f::IO
