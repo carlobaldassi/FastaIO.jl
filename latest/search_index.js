@@ -17,9 +17,9 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "index.html#Installation-and-Usage-1",
+    "location": "index.html#Installation-and-usage-1",
     "page": "Home",
-    "title": "Installation and Usage",
+    "title": "Installation and usage",
     "category": "section",
     "text": "To install the module, use Julia's package manager:julia> Pkg.add(\"FastaIO\")Dependencies will be installed automatically. The module can then be loaded like any other Julia module:julia> using FastaIO"
 },
