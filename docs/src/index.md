@@ -35,7 +35,7 @@ julia> FastaWriter("somefile.fasta") do fw
        end
 ```
 
-## Installation and Usage
+## Installation and usage
 
 To install the module, use Julia's package manager:
 
