@@ -13,6 +13,7 @@ See [`FastaReader`](@ref), [`FastaWriter`](@ref), [`readfasta`](@ref),
 """
 module FastaIO
 
+using Compat
 using GZip
 
 export
@@ -29,7 +30,7 @@ import Base.start, Base.done, Base.next, Base.readstring,
 
 const fasta_buffer_size = 4096
 
-type FastaReader{T}
+mutable struct FastaReader{T}
     # public but read-only
     num_parsed::Int        # number of parsed entries so far
     # private
@@ -43,22 +44,20 @@ type FastaReader{T}
     mbuffer::Vector{UInt8} # multi-line buffer
     mbuf_sz::Int           # multi-line buffer size
     own_f::Bool
-    # function FastaReader{T}(filename::AbstractString) where T # TODO use this when 0.5 support is dropped
-    function (::Type{FastaReader{T}}){T}(filename::AbstractString)
+    function FastaReader{T}(filename::AbstractString) where {T}
         fr = new{T}(0, gzopen(filename), false,
-                    Array{UInt8}(fasta_buffer_size), 0, 0,
-                    Array{UInt8}(fasta_buffer_size), 0,
-                    Array{UInt8}(fasta_buffer_size), 0,
+                    Array{UInt8}(undef, fasta_buffer_size), 0, 0,
+                    Array{UInt8}(undef, fasta_buffer_size), 0,
+                    Array{UInt8}(undef, fasta_buffer_size), 0,
                     true)
-        finalizer(fr, close)
+        VERSION ≥ v"0.7.0-DEV.2562" ? finalizer(close, fr) : finalizer(fr, close)
         return fr
     end
-    # function FastaReader{T}(io::IO) where {T} # TODO use this when 0.5 support is dropped
-    function (::Type{FastaReader{T}}){T}(io::IO)
+    function FastaReader{T}(io::IO) where {T}
         new{T}(0, io, false,
-               Array{UInt8}(fasta_buffer_size), 0, 0,
-               Array{UInt8}(fasta_buffer_size), 0,
-               Array{UInt8}(fasta_buffer_size), 0,
+               Array{UInt8}(undef, fasta_buffer_size), 0, 0,
+               Array{UInt8}(undef, fasta_buffer_size), 0,
+               Array{UInt8}(undef, fasta_buffer_size), 0,
                false)
     end
 end
@@ -142,7 +141,7 @@ end
 
 read_chunk_ll(fr::FastaReader, s::GZipStream) = gzread(s, pointer(fr.rbuffer), fasta_buffer_size)
 read_chunk_ll(fr::FastaReader, s::IOStream) =
-    ccall(:ios_readall, UInt, (Ptr{Void}, Ptr{Void}, UInt), fr.f.ios, fr.rbuffer, fasta_buffer_size)
+    ccall(:ios_readall, UInt, (Ptr{Nothing}, Ptr{Nothing}, UInt), fr.f.ios, fr.rbuffer, fasta_buffer_size)
 function read_chunk_ll(fr::FastaReader, s::IO)
     ret = 0
     while !eof(fr.f) && ret < fasta_buffer_size
@@ -194,7 +193,7 @@ function readline(fr::FastaReader)
         end
 
         #fr.lbuffer[fr.lbuf_sz + (1:chunk_len)] = fr.rbuffer[fr.rbuf_pos:i]
-        copy!(fr.lbuffer, fr.lbuf_sz + 1, fr.rbuffer, fr.rbuf_pos, chunk_len)
+        copyto!(fr.lbuffer, fr.lbuf_sz + 1, fr.rbuffer, fr.rbuf_pos, chunk_len)
         fr.lbuf_sz += chunk_len
 
         i += 2 + cr
@@ -215,7 +214,7 @@ function start(fr::FastaReader)
     end
     return
 end
-done(fr::FastaReader, x::Void) = fr.is_eof
+done(fr::FastaReader, x::Nothing) = fr.is_eof
 function _next_step(fr::FastaReader)
     if fr.lbuffer[1] != UInt8('>')
         error("invalid FASTA file: description does not start with '>'")
@@ -236,7 +235,7 @@ function _next_step(fr::FastaReader)
             resize!(fr.mbuffer, length(fr.mbuffer) + gap)
         end
         #fr.mbuffer[fr.mbuf_sz + (1:fr.lbuf_sz)] = fr.lbuffer[1:fr.lbuf_sz]
-        copy!(fr.mbuffer, fr.mbuf_sz + 1, fr.lbuffer, 1, fr.lbuf_sz)
+        copyto!(fr.mbuffer, fr.mbuf_sz + 1, fr.lbuffer, 1, fr.lbuf_sz)
         fr.mbuf_sz += fr.lbuf_sz
     end
     return name
@@ -252,13 +251,13 @@ function _next(fr::FastaReader{String})
     fr.num_parsed += 1
     return (name, out_str)
 end
-function _next{T}(fr::FastaReader{T})
+function _next(fr::FastaReader{T}) where {T}
     name = _next_step(fr)
     fr.num_parsed += 1
     return (name, T(fr.mbuffer[1:fr.mbuf_sz]))
 end
 
-next(fr::FastaReader, x::Void) = (_next(fr), nothing)
+next(fr::FastaReader, x::Nothing) = (_next(fr), nothing)
 
 """
     readstring(fr::FastaReader)
@@ -315,7 +314,7 @@ close(fr)
 """
 eof(fr::FastaReader) = fr.is_eof
 
-function show{T}(io::IO, fr::FastaReader{T})
+function show(io::IO, fr::FastaReader{T}) where {T}
     print(io, "FastaReader(input=\"$(fr.f)\", out_type=$T, num_parsed=$(fr.num_parsed), eof=$(fr.is_eof))")
 end
 
@@ -334,7 +333,7 @@ function readfasta(filename::AbstractString, T::Type=String)
 end
 readfasta(io::IO, T::Type=String) = readstring(FastaReader{T}(io))
 
-type FastaWriter
+mutable struct FastaWriter
     f::IO
     in_seq::Bool
     entry_chars::Int
@@ -346,7 +345,7 @@ type FastaWriter
     at_start::Bool
     function FastaWriter(io::IO)
         fw = new(io, false, 0, 0, false, 0, 1, false, true)
-        finalizer(fw, close)
+        VERSION ≥ v"0.7.0-DEV.2562" ? finalizer(close, fw) : finalizer(fw, close)
         return fw
     end
     function FastaWriter(filename::AbstractString, mode::AbstractString = "w")
@@ -357,6 +356,7 @@ type FastaWriter
         end
         fw = new(of(filename, mode), false, 0, 0, false, 0, 1, true, true)
         finalizer(fw, close)
+        VERSION ≥ v"0.7.0-DEV.2562" ? finalizer(close, fw) : finalizer(fw, close)
         return fw
     end
 end
@@ -535,7 +535,7 @@ function writeentry(fw::FastaWriter, desc::AbstractString, seq)
     !fw.at_start && write(fw, '\n')
     desc = strip(String(desc))
     isascii(desc) || error("description must be ASCII (entry $(fw.entry+1) of FASTA input)")
-    if search(desc, '\n') != 0
+    if findfirst(isequal('\n'), desc) ∉ (nothing, 0) # TODO: remove 0 when support for julia 0.6 is dropped
         error("newlines are not allowed within description (entry $(fw.entry+1) of FASTA input)")
     end
     write(fw, '>')
@@ -609,7 +609,7 @@ function writefasta(io::IO, data)
         if isempty(desc)
             error("empty description (entry $entry of FASTA input")
         end
-        if search(desc, '\n') != 0
+        if findfirst(isequal('\n'), desc) ∉ (nothing, 0) # TODO: remove 0 when support for julia 0.6 is dropped
             error("newlines are not allowed within description (entry $entry of FASTA input)")
         end
         if length(desc) > 79

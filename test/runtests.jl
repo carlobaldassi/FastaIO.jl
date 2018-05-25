@@ -2,7 +2,12 @@ module FastaTests
 
 using FastaIO
 using GZip
-using Base.Test
+using Compat
+if VERSION < v"0.7.0-DEV.1995"
+    using Base.Test
+else
+    using Test
+end
 
 const fastadata_ascii = Any[
     ("A0ADS9_STRAM/3-104",
@@ -54,8 +59,8 @@ const fastadata_ascii = Any[
      "------------------------------------------------------------" *
      "---------")]
 
-const fastadata_uint8 = map(x->(x[1],convert(Vector{UInt8}, x[2])), fastadata_ascii)
-const fastadata_char = map(x->(x[1],convert(Vector{Char}, x[2])), fastadata_ascii)
+const fastadata_uint8 = map(x->(x[1],Vector{UInt8}(codeunits(x[2]))), fastadata_ascii)
+const fastadata_char = map(x->(x[1],Vector{Char}(x[2])), fastadata_ascii)
 
 function test_fastaread(T::Type, infile, fastadata)
     FastaReader(infile, T) do fr
