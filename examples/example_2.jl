@@ -1,5 +1,5 @@
 # example 2: read with readentry
-#            default return type (ASCIIString)
+#            default return type (String)
 
 module FastaIOExample2
 using FastaIO

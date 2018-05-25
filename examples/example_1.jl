@@ -1,5 +1,5 @@
 # example 1: read with iterators,
-#            default return type (ASCIIString)
+#            default return type (String)
 
 module FastaIOExample1
 using FastaIO

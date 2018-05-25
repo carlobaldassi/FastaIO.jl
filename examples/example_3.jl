@@ -1,5 +1,5 @@
 # example 3: read all at once with readall (or readfasta)
-#            default return type (ASCIIString)
+#            default return type (String)
 
 module FastaIOExample3
 using FastaIO
