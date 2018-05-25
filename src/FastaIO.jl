@@ -203,6 +203,10 @@ function readline(fr::FastaReader)
         fr.rbuf_pos = i
         found && break
     end
+    if !fr.is_eof && fr.lbuf_sz == 0
+        # empty line, ignore and run again
+        return readline(fr)
+    end
     return
 end
 

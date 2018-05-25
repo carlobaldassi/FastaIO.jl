@@ -69,6 +69,7 @@ The FASTA format which is assumed by this module is as follows:
 3. all characters must be ASCII
 4. whitespace is not allowed within sequence data (except for newlines) and
    at the beginning or end of the description
+5. Empty lines are ignored (note however that lines containing whitespace will still trigger an error)
 
 When writing, description lines longer than 80 characters will trigger a warning message; sequence data is
 formatted in lines of 80 characters each; extra whitespace is silently discarded.
@@ -85,7 +86,7 @@ argument to [`readfasta`](@ref) or as a parametric type of [`FastaReader`](@ref)
 `String`, which is the most memory-efficient and the fastest; another performance-optimal option is
 `Vector{UInt8}`, which is a less friendly representation, but has the advantage of being mutable. Any
 other container `T` for which `convert(::Type{T}, ::Vector{UInt8})` is defined can be used (e.g.
-`Vector{Char}`, or a more specialized `Vector{AminoAcid}` if you use the
+`Vector{Char}`, or a more specialized `Vector{AminoAcid}` if you use
 [BioSeq](https://github.com/diegozea/BioSeq.jl), but the conversion will generally slightly
 reduce the performance.
 

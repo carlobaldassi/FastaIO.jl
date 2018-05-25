@@ -131,7 +131,7 @@ function test_fastawrite(infile, outfile, fastadata)
     return
 end
 
-for suffix in ["", ".gz", ".win", ".win.gz", ".no_eof", ".no_eof.gz"]
+for suffix in ["", ".gz", ".win", ".win.gz", ".no_eof", ".no_eof.gz", ".blanklines", ".blanklines.gz"]
     infile = joinpath(dirname(Base.source_path()), "test.fasta" * suffix)
     outfile = joinpath(dirname(Base.source_path()), "test_out.fasta" * suffix)
 
