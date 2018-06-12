@@ -359,7 +359,6 @@ mutable struct FastaWriter
             of = open
         end
         fw = new(of(filename, mode), false, 0, 0, false, 0, 1, true, true)
-        finalizer(fw, close)
         VERSION ≥ v"0.7.0-DEV.2562" ? finalizer(close, fw) : finalizer(fw, close)
         return fw
     end
