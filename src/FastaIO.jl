@@ -25,8 +25,13 @@ export
     writeentry,
     writefasta
 
-import Base.start, Base.done, Base.next, Base.readstring,
-       Base.close, Base.show, Base.eof, Base.write
+import Base.readstring, Base.close, Base.show, Base.eof, Base.write
+
+@static if VERSION < v"0.7.0-DEV.5126"
+    import Base: done, next, start
+else
+    import Base: iterate
+end
 
 const fasta_buffer_size = 4096
 
@@ -210,15 +215,6 @@ function readline(fr::FastaReader)
     return
 end
 
-function start(fr::FastaReader)
-    rewind(fr)
-    readline(fr)
-    if fr.lbuf_sz == 0
-        error("empty FASTA file")
-    end
-    return
-end
-done(fr::FastaReader, x::Nothing) = fr.is_eof
 function _next_step(fr::FastaReader)
     if fr.lbuffer[1] != UInt8('>')
         error("invalid FASTA file: description does not start with '>'")
@@ -261,7 +257,31 @@ function _next(fr::FastaReader{T}) where {T}
     return (name, T(fr.mbuffer[1:fr.mbuf_sz]))
 end
 
-next(fr::FastaReader, x::Nothing) = (_next(fr), nothing)
+@static if VERSION < v"0.7.0-DEV.5126"
+    function start(fr::FastaReader)
+        rewind(fr)
+        readline(fr)
+        if fr.lbuf_sz == 0
+            error("empty FASTA file")
+        end
+        return
+    end
+    done(fr::FastaReader, x::Nothing) = fr.is_eof
+    next(fr::FastaReader, x::Nothing) = (_next(fr), nothing)
+else
+    function iterate(fr::FastaReader)
+        rewind(fr)
+        readline(fr)
+        if fr.lbuf_sz == 0
+            error("empty FASTA file")
+        end
+        return fr.is_eof ? nothing : (_next(fr), nothing)
+    end
+    function iterate(fr::FastaReader, x::Nothing)
+        fr.is_eof && return nothing
+        return _next(fr), nothing
+    end
+end
 
 """
     readstring(fr::FastaReader)
@@ -297,7 +317,7 @@ function readentry(fr::FastaReader)
             error("empty FASTA file")
         end
     end
-    item, _ = next(fr, nothing)
+    item = _next(fr)
     return item
 end
 
