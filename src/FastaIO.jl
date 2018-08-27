@@ -15,14 +15,14 @@ using GZip
 
 export
     FastaReader,
-    readentry,
+    readentry, readentries,
     rewind,
     readfasta,
     FastaWriter,
     writeentry,
     writefasta
 
-import Base.readstring, Base.close, Base.show, Base.eof, Base.write
+import Base.close, Base.show, Base.eof, Base.write
 import Base: iterate
 
 const fasta_buffer_size = 4096
@@ -80,7 +80,7 @@ type is set when creating the `FastaReader` object (e.g. `FastaReader{Vector{UIn
 
 The `FastaReader` type has a field `num_parsed` which contains the number of entries parsed so far.
 
-Other ways to read out the data are via the [`readentry`](@ref) and [`readstring`](@ref) functions.
+Other ways to read out the data are via the [`readentry`](@ref) and [`readentries`](@ref) functions.
 """
 FastaReader(file::Union{AbstractString,IO}) = FastaReader{String}(file)
 
@@ -249,6 +249,9 @@ function _next(fr::FastaReader{T}) where {T}
     return (name, T(fr.mbuffer[1:fr.mbuf_sz]))
 end
 
+Base.eltype(fr::FastaReader{T}) where T = Tuple{String, T}
+Base.IteratorSize(fr::FastaReader) = Base.SizeUnknown()
+
 function iterate(fr::FastaReader)
     rewind(fr)
     readline(fr)
@@ -263,18 +266,13 @@ function iterate(fr::FastaReader, x::Nothing)
 end
 
 """
-    readstring(fr::FastaReader)
+    readentries(fr::FastaReader)
 
-This function extends `Base.readstring`: it parses a whole FASTA file at once, and returns an array of
-tuples, each one containing the description and the sequence (see also the [`readfasta`](@ref) function).
+Parses the whole FASTA file at once and returns an array of
+tuples, each one containing the description and the sequence
+(see also the [`readfasta`](@ref) function).
 """
-function readstring(fr::FastaReader)
-    ret = Any[]
-    for item in fr
-        push!(ret, item)
-    end
-    return ret
-end
+readentries(fr::FastaReader) = collect(fr)
 
 """
     readentry(fr::FastaReader)
@@ -329,12 +327,9 @@ whose elements are tuples consisting of `(description, sequence)`, where `descri
 `String` and `sequence` contains the sequence data, stored in a container type defined by
 the `sequence_type` optional argument (see [The sequence storage type](@ref) section for more information).
 """
-function readfasta(filename::AbstractString, T::Type=String)
-    FastaReader(filename, T) do fr
-        readstring(fr)
-    end
-end
-readfasta(io::IO, T::Type=String) = readstring(FastaReader{T}(io))
+readfasta(filename::AbstractString, ::Type{T}=String) where T =
+    gzopen(io -> readfasta(io, T), filename)
+readfasta(io::IO, ::Type{T}=String) where T = readentries(FastaReader{T}(io))
 
 mutable struct FastaWriter
     f::IO
