@@ -2,7 +2,7 @@
 
 | **Documentation**                                                               | **PackageEvaluator**                                            | **Build Status**                                                                                |
 |:-------------------------------------------------------------------------------:|:---------------------------------------------------------------:|:-----------------------------------------------------------------------------------------------:|
-| [![][docs-stable-img]][docs-stable-url] [![][docs-latest-img]][docs-latest-url] | [![][pkg-0.5-img]][pkg-0.5-url] [![][pkg-0.6-img]][pkg-0.6-url] | [![][travis-img]][travis-url] [![][appveyor-img]][appveyor-url] [![][codecov-img]][codecov-url] |
+| [![][docs-stable-img]][docs-stable-url] [![][docs-latest-img]][docs-latest-url] | [![][pkg-0.6-img]][pkg-0.6-url] [![][pkg-0.7-img]][pkg-0.7-url] | [![][travis-img]][travis-url] [![][appveyor-img]][appveyor-url] [![][codecov-img]][codecov-url] |
 
 Utilities to read/write FASTA format files in [Julia].
 
@@ -45,7 +45,7 @@ See also the examples in the `examples/` directory.
 [codecov-img]: https://codecov.io/gh/carlobaldassi/FastaIO.jl/branch/master/graph/badge.svg
 [codecov-url]: https://codecov.io/gh/carlobaldassi/FastaIO.jl
 
-[pkg-0.5-img]: http://pkg.julialang.org/badges/FastaIO_0.5.svg
-[pkg-0.5-url]: http://pkg.julialang.org/?pkg=FastaIO
 [pkg-0.6-img]: http://pkg.julialang.org/badges/FastaIO_0.6.svg
-[pkg-0.6-url]: http://pkg.julialang.org/?pkg=FastaIO
+[pkg-0.6-url]: http://pkg.julialang.org/?pkg=FastaIO&ver=0.6
+[pkg-0.7-img]: http://pkg.julialang.org/badges/FastaIO_0.7.svg
+[pkg-0.7-url]: http://pkg.julialang.org/?pkg=FastaIO&ver=0.7

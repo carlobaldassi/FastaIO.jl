@@ -2,12 +2,7 @@ module FastaTests
 
 using FastaIO
 using GZip
-using Compat
-if VERSION < v"0.7.0-DEV.1995"
-    using Base.Test
-else
-    using Test
-end
+using Test
 
 const fastadata_ascii = Any[
     ("A0ADS9_STRAM/3-104",

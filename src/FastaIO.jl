@@ -1,5 +1,3 @@
-__precompile__()
-
 """
 This module provides ways to parse and write files in
 [FASTA format](http://en.wikipedia.org/wiki/FASTA_format) in Julia.
@@ -13,7 +11,6 @@ See [`FastaReader`](@ref), [`FastaWriter`](@ref), [`readfasta`](@ref),
 """
 module FastaIO
 
-using Compat
 using GZip
 
 export
@@ -26,12 +23,7 @@ export
     writefasta
 
 import Base.readstring, Base.close, Base.show, Base.eof, Base.write
-
-@static if VERSION < v"0.7.0-DEV.5126"
-    import Base: done, next, start
-else
-    import Base: iterate
-end
+import Base: iterate
 
 const fasta_buffer_size = 4096
 
@@ -55,7 +47,7 @@ mutable struct FastaReader{T}
                     Array{UInt8}(undef, fasta_buffer_size), 0,
                     Array{UInt8}(undef, fasta_buffer_size), 0,
                     true)
-        VERSION ≥ v"0.7.0-DEV.2562" ? finalizer(close, fr) : finalizer(fr, close)
+        finalizer(close, fr)
         return fr
     end
     function FastaReader{T}(io::IO) where {T}
@@ -257,30 +249,17 @@ function _next(fr::FastaReader{T}) where {T}
     return (name, T(fr.mbuffer[1:fr.mbuf_sz]))
 end
 
-@static if VERSION < v"0.7.0-DEV.5126"
-    function start(fr::FastaReader)
-        rewind(fr)
-        readline(fr)
-        if fr.lbuf_sz == 0
-            error("empty FASTA file")
-        end
-        return
+function iterate(fr::FastaReader)
+    rewind(fr)
+    readline(fr)
+    if fr.lbuf_sz == 0
+        error("empty FASTA file")
     end
-    done(fr::FastaReader, x::Nothing) = fr.is_eof
-    next(fr::FastaReader, x::Nothing) = (_next(fr), nothing)
-else
-    function iterate(fr::FastaReader)
-        rewind(fr)
-        readline(fr)
-        if fr.lbuf_sz == 0
-            error("empty FASTA file")
-        end
-        return fr.is_eof ? nothing : (_next(fr), nothing)
-    end
-    function iterate(fr::FastaReader, x::Nothing)
-        fr.is_eof && return nothing
-        return _next(fr), nothing
-    end
+    return fr.is_eof ? nothing : (_next(fr), nothing)
+end
+function iterate(fr::FastaReader, x::Nothing)
+    fr.is_eof && return nothing
+    return _next(fr), nothing
 end
 
 """
@@ -369,7 +348,7 @@ mutable struct FastaWriter
     at_start::Bool
     function FastaWriter(io::IO)
         fw = new(io, false, 0, 0, false, 0, 1, false, true)
-        VERSION ≥ v"0.7.0-DEV.2562" ? finalizer(close, fw) : finalizer(fw, close)
+        finalizer(close, fw)
         return fw
     end
     function FastaWriter(filename::AbstractString, mode::AbstractString = "w")
@@ -379,7 +358,7 @@ mutable struct FastaWriter
             of = open
         end
         fw = new(of(filename, mode), false, 0, 0, false, 0, 1, true, true)
-        VERSION ≥ v"0.7.0-DEV.2562" ? finalizer(close, fw) : finalizer(fw, close)
+        finalizer(close, fw)
         return fw
     end
 end

@@ -4,8 +4,8 @@ os:
   - linux
   - osx
 julia:
-  - 0.6
   - 0.7
+  - 1.0
   - nightly
 matrix:
     allow_failures:
@@ -13,7 +13,5 @@ matrix:
 notifications:
   email: false
 after_success:
-  - julia -e 'Pkg.add("Documenter", v"0.6.0")'
-  - julia -e 'cd(Pkg.dir("FastaIO")); include(joinpath("docs", "make.jl"))'
-  - julia -e 'Pkg.add("Coverage", v"0.3")'
-  - julia -e 'cd(Pkg.dir("FastaIO")); include(joinpath("docs", "coverage.jl"))'
+  - julia -e 'using Pkg, FastaIO; Pkg.add("Documenter"); include(joinpath("docs", "make.jl"))'
+  - julia -e 'using Pkg, FastaIO; Pkg.add("Coverage"); using Coverage; get(ENV,"TRAVIS_OS_NAME","")=="linux" && get(ENV,"TRAVIS_JULIA_VERSION","")=="0.7" && Codecov.submit(Codecov.process_folder())'
