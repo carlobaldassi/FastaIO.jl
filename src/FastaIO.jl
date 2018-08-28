@@ -207,6 +207,7 @@ function readline(fr::FastaReader)
     return
 end
 
+# gets the ID from lbuffer and reads FASTA entry into mbuffer
 function _next_step(fr::FastaReader)
     if fr.lbuffer[1] != UInt8('>')
         error("invalid FASTA file: description does not start with '>'")
@@ -232,21 +233,17 @@ function _next_step(fr::FastaReader)
     end
     return name
 end
-function _next(fr::FastaReader{Vector{UInt8}})
+
+# extracts the sequence of the FASTA entry from the mbuffer, the result is of type T
+_next_seq(fr::FastaReader{Vector{UInt8}}) = fr.mbuffer[1:fr.mbuf_sz]
+_next_seq(fr::FastaReader{String}) = ccall(:jl_pchar_to_string, Ref{String}, (Ptr{UInt8},Int), fr.mbuffer, fr.mbuf_sz)
+_next_seq(fr::FastaReader{T}) where T = T(fr.mbuffer[1:fr.mbuf_sz])
+
+function _next(fr::FastaReader{T}) where T
     name = _next_step(fr)
+    seq = _next_seq(fr)::T
     fr.num_parsed += 1
-    return (name, fr.mbuffer[1:fr.mbuf_sz])
-end
-function _next(fr::FastaReader{String})
-    name = _next_step(fr)
-    out_str = ccall(:jl_pchar_to_string, Ref{String}, (Ptr{UInt8},Int), fr.mbuffer, fr.mbuf_sz)
-    fr.num_parsed += 1
-    return (name, out_str)
-end
-function _next(fr::FastaReader{T}) where {T}
-    name = _next_step(fr)
-    fr.num_parsed += 1
-    return (name, T(fr.mbuffer[1:fr.mbuf_sz]))
+    return (name, seq)
 end
 
 Base.eltype(fr::FastaReader{T}) where T = Tuple{String, T}
