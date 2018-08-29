@@ -59,8 +59,8 @@ const fastadata_char = map(x->(x[1],Vector{Char}(x[2])), fastadata_ascii)
 
 function test_fastaread(T::Type, infile, fastadata)
     FastaReader(infile, T) do fr
-    @testset "readentries(fr)" begin
-        @test readentries(fr) == fastadata
+    @testset "collect(fr)" begin
+        @test collect(fr) == fastadata
     end
 
         rewind(fr)

@@ -15,7 +15,7 @@ using GZip
 
 export
     FastaReader,
-    readentry, readentries,
+    readentry,
     rewind,
     readfasta,
     FastaWriter,
@@ -80,7 +80,7 @@ type is set when creating the `FastaReader` object (e.g. `FastaReader{Vector{UIn
 
 The `FastaReader` type has a field `num_parsed` which contains the number of entries parsed so far.
 
-Other ways to read out the data are via the [`readentry`](@ref) and [`readentries`](@ref) functions.
+Other ways to read out the data are via the [`readentry`](@ref) and [`readfasta`](@ref) functions.
 """
 FastaReader(file::Union{AbstractString,IO}) = FastaReader{String}(file)
 
@@ -263,15 +263,6 @@ function iterate(fr::FastaReader, x::Nothing)
 end
 
 """
-    readentries(fr::FastaReader)
-
-Parses the whole FASTA file at once and returns an array of
-tuples, each one containing the description and the sequence
-(see also the [`readfasta`](@ref) function).
-"""
-readentries(fr::FastaReader) = collect(fr)
-
-"""
     readentry(fr::FastaReader)
 
 This function can be used to read entries one at a time:
@@ -326,7 +317,7 @@ the `sequence_type` optional argument (see [The sequence storage type](@ref) sec
 """
 readfasta(filename::AbstractString, ::Type{T}=String) where T =
     gzopen(io -> readfasta(io, T), filename)
-readfasta(io::IO, ::Type{T}=String) where T = readentries(FastaReader{T}(io))
+readfasta(io::IO, ::Type{T}=String) where T = collect(FastaReader{T}(io))
 
 mutable struct FastaWriter
     f::IO

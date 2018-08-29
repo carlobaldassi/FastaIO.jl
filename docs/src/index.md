@@ -109,10 +109,6 @@ readentry
 ```
 
 ```@docs
-readstring(::FastaReader)
-```
-
-```@docs
 rewind(::FastaReader)
 ```
 
