@@ -1,4 +1,4 @@
-# FastaIO.jl — FASTA file reader and writed module
+# FastaIO.jl — FASTA file reader and writer module
 
 ```@meta
 CurrentModule = FastaIO
@@ -106,10 +106,6 @@ FastaReader(::Function, ::AbstractString)
 
 ```@docs
 readentry
-```
-
-```@docs
-readstring(::FastaReader)
 ```
 
 ```@docs

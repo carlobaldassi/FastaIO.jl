@@ -2,12 +2,7 @@ module FastaTests
 
 using FastaIO
 using GZip
-using Compat
-if VERSION < v"0.7.0-DEV.1995"
-    using Base.Test
-else
-    using Test
-end
+using Test
 
 const fastadata_ascii = Any[
     ("A0ADS9_STRAM/3-104",
@@ -64,21 +59,27 @@ const fastadata_char = map(x->(x[1],Vector{Char}(x[2])), fastadata_ascii)
 
 function test_fastaread(T::Type, infile, fastadata)
     FastaReader(infile, T) do fr
-        @test readstring(fr) == fastadata
+    @testset "collect(fr)" begin
+        @test collect(fr) == fastadata
+    end
 
         rewind(fr)
 
+    @testset "iterate(fr)" begin
         for (desc, seq) in fr
             @test desc == fastadata[fr.num_parsed][1]
             @test seq == fastadata[fr.num_parsed][2]
         end
+    end
 
         rewind(fr)
+    @testset "readentry(fr)" begin
         while !eof(fr)
             desc, seq = readentry(fr)
             @test desc == fastadata[fr.num_parsed][1]
             @test seq == fastadata[fr.num_parsed][2]
         end
+    end
     end
 end
 
@@ -131,17 +132,16 @@ function test_fastawrite(infile, outfile, fastadata)
     return
 end
 
-for suffix in ["", ".gz", ".win", ".win.gz", ".no_eof", ".no_eof.gz", ".blanklines", ".blanklines.gz"]
+@testset "reading test.fasta$(suffix) as $T" for
+    suffix in ["", ".gz", ".win", ".win.gz", ".no_eof", ".no_eof.gz", ".blanklines", ".blanklines.gz"],
+    (T, fastadata) in [(Vector{UInt8}, fastadata_uint8),
+                       (Vector{Char}, fastadata_char),
+                       (String, fastadata_ascii)]
+
     infile = joinpath(dirname(Base.source_path()), "test.fasta" * suffix)
     outfile = joinpath(dirname(Base.source_path()), "test_out.fasta" * suffix)
 
-    tests = [(Vector{UInt8}, fastadata_uint8),
-             (Vector{Char}, fastadata_char),
-             (String, fastadata_ascii)]
-
-    for (T, fastadata) in tests
-        test_fastaread(T, infile, fastadata)
-    end
+    test_fastaread(T, infile, fastadata)
 
     try
         test_fastawrite(infile, outfile, fastadata_ascii)
@@ -150,7 +150,7 @@ for suffix in ["", ".gz", ".win", ".win.gz", ".no_eof", ".no_eof.gz", ".blanklin
     end
 end
 
-for i in 1:4
+@testset "reading invalid fasta #$i" for i in 1:4
     infile = joinpath(dirname(Base.source_path()), "invalid_test_$i.fasta.gz")
 
     @test_throws Exception readfasta(infile)
@@ -163,7 +163,7 @@ end
 
 outfile = joinpath(dirname(Base.source_path()), "invalid_test_out.fasta.gz")
 
-for i in 2:6
+@testset "writing invalid fasta #$i" for i in 2:6
     infile = joinpath(dirname(Base.source_path()), "invalid_test_$i.fasta.gz")
 
     try

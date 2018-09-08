@@ -1,5 +1,3 @@
-__precompile__()
-
 """
 This module provides ways to parse and write files in
 [FASTA format](http://en.wikipedia.org/wiki/FASTA_format) in Julia.
@@ -13,7 +11,6 @@ See [`FastaReader`](@ref), [`FastaWriter`](@ref), [`readfasta`](@ref),
 """
 module FastaIO
 
-using Compat
 using GZip
 
 export
@@ -25,13 +22,8 @@ export
     writeentry,
     writefasta
 
-import Base.readstring, Base.close, Base.show, Base.eof, Base.write
-
-@static if VERSION < v"0.7.0-DEV.5126"
-    import Base: done, next, start
-else
-    import Base: iterate
-end
+import Base.close, Base.show, Base.eof, Base.write
+import Base: iterate
 
 const fasta_buffer_size = 4096
 
@@ -55,7 +47,7 @@ mutable struct FastaReader{T}
                     Array{UInt8}(undef, fasta_buffer_size), 0,
                     Array{UInt8}(undef, fasta_buffer_size), 0,
                     true)
-        VERSION ≥ v"0.7.0-DEV.2562" ? finalizer(close, fr) : finalizer(fr, close)
+        finalizer(close, fr)
         return fr
     end
     function FastaReader{T}(io::IO) where {T}
@@ -88,7 +80,7 @@ type is set when creating the `FastaReader` object (e.g. `FastaReader{Vector{UIn
 
 The `FastaReader` type has a field `num_parsed` which contains the number of entries parsed so far.
 
-Other ways to read out the data are via the [`readentry`](@ref) and [`readstring`](@ref) functions.
+Other ways to read out the data are via the [`readentry`](@ref) and [`readfasta`](@ref) functions.
 """
 FastaReader(file::Union{AbstractString,IO}) = FastaReader{String}(file)
 
@@ -215,6 +207,7 @@ function readline(fr::FastaReader)
     return
 end
 
+# gets the ID from lbuffer and reads FASTA entry into mbuffer
 function _next_step(fr::FastaReader)
     if fr.lbuffer[1] != UInt8('>')
         error("invalid FASTA file: description does not start with '>'")
@@ -240,61 +233,33 @@ function _next_step(fr::FastaReader)
     end
     return name
 end
-function _next(fr::FastaReader{Vector{UInt8}})
+
+# extracts the sequence of the FASTA entry from the mbuffer, the result is of type T
+_next_seq(fr::FastaReader{Vector{UInt8}}) = fr.mbuffer[1:fr.mbuf_sz]
+_next_seq(fr::FastaReader{String}) = ccall(:jl_pchar_to_string, Ref{String}, (Ptr{UInt8},Int), fr.mbuffer, fr.mbuf_sz)
+_next_seq(fr::FastaReader{T}) where T = T(fr.mbuffer[1:fr.mbuf_sz])
+
+function _next(fr::FastaReader{T}) where T
     name = _next_step(fr)
+    seq = _next_seq(fr)::T
     fr.num_parsed += 1
-    return (name, fr.mbuffer[1:fr.mbuf_sz])
-end
-function _next(fr::FastaReader{String})
-    name = _next_step(fr)
-    out_str = ccall(:jl_pchar_to_string, Ref{String}, (Ptr{UInt8},Int), fr.mbuffer, fr.mbuf_sz)
-    fr.num_parsed += 1
-    return (name, out_str)
-end
-function _next(fr::FastaReader{T}) where {T}
-    name = _next_step(fr)
-    fr.num_parsed += 1
-    return (name, T(fr.mbuffer[1:fr.mbuf_sz]))
+    return (name, seq)
 end
 
-@static if VERSION < v"0.7.0-DEV.5126"
-    function start(fr::FastaReader)
-        rewind(fr)
-        readline(fr)
-        if fr.lbuf_sz == 0
-            error("empty FASTA file")
-        end
-        return
+Base.eltype(fr::FastaReader{T}) where T = Tuple{String, T}
+Base.IteratorSize(fr::FastaReader) = Base.SizeUnknown()
+
+function iterate(fr::FastaReader)
+    rewind(fr)
+    readline(fr)
+    if fr.lbuf_sz == 0
+        error("empty FASTA file")
     end
-    done(fr::FastaReader, x::Nothing) = fr.is_eof
-    next(fr::FastaReader, x::Nothing) = (_next(fr), nothing)
-else
-    function iterate(fr::FastaReader)
-        rewind(fr)
-        readline(fr)
-        if fr.lbuf_sz == 0
-            error("empty FASTA file")
-        end
-        return fr.is_eof ? nothing : (_next(fr), nothing)
-    end
-    function iterate(fr::FastaReader, x::Nothing)
-        fr.is_eof && return nothing
-        return _next(fr), nothing
-    end
+    return fr.is_eof ? nothing : (_next(fr), nothing)
 end
-
-"""
-    readstring(fr::FastaReader)
-
-This function extends `Base.readstring`: it parses a whole FASTA file at once, and returns an array of
-tuples, each one containing the description and the sequence (see also the [`readfasta`](@ref) function).
-"""
-function readstring(fr::FastaReader)
-    ret = Any[]
-    for item in fr
-        push!(ret, item)
-    end
-    return ret
+function iterate(fr::FastaReader, x::Nothing)
+    fr.is_eof && return nothing
+    return _next(fr), nothing
 end
 
 """
@@ -350,12 +315,9 @@ whose elements are tuples consisting of `(description, sequence)`, where `descri
 `String` and `sequence` contains the sequence data, stored in a container type defined by
 the `sequence_type` optional argument (see [The sequence storage type](@ref) section for more information).
 """
-function readfasta(filename::AbstractString, T::Type=String)
-    FastaReader(filename, T) do fr
-        readstring(fr)
-    end
-end
-readfasta(io::IO, T::Type=String) = readstring(FastaReader{T}(io))
+readfasta(filename::AbstractString, ::Type{T}=String) where T =
+    gzopen(io -> readfasta(io, T), filename)
+readfasta(io::IO, ::Type{T}=String) where T = collect(FastaReader{T}(io))
 
 mutable struct FastaWriter
     f::IO
@@ -369,7 +331,7 @@ mutable struct FastaWriter
     at_start::Bool
     function FastaWriter(io::IO)
         fw = new(io, false, 0, 0, false, 0, 1, false, true)
-        VERSION ≥ v"0.7.0-DEV.2562" ? finalizer(close, fw) : finalizer(fw, close)
+        finalizer(close, fw)
         return fw
     end
     function FastaWriter(filename::AbstractString, mode::AbstractString = "w")
@@ -379,7 +341,7 @@ mutable struct FastaWriter
             of = open
         end
         fw = new(of(filename, mode), false, 0, 0, false, 0, 1, true, true)
-        VERSION ≥ v"0.7.0-DEV.2562" ? finalizer(close, fw) : finalizer(fw, close)
+        finalizer(close, fw)
         return fw
     end
 end

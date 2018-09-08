@@ -1,3 +1,2 @@
-julia 0.6
-Compat 0.59
-GZip 0.2.20
+julia 0.7
+GZip 0.5
