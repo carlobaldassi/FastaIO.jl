@@ -13,5 +13,5 @@ matrix:
 notifications:
   email: false
 after_success:
-  - julia -e 'using Pkg, FastaIO; Pkg.add("Documenter"); include(joinpath("docs", "make.jl"))'
+  - julia -e 'using Pkg, FastaIO; ps=Pkg.PackageSpec(name="Documenter", version="0.19"); Pkg.add(ps); Pkg.pin(ps); include(joinpath("docs", "make.jl"))'
   - julia -e 'using Pkg, FastaIO; Pkg.add("Coverage"); using Coverage; get(ENV,"TRAVIS_OS_NAME","")=="linux" && get(ENV,"TRAVIS_JULIA_VERSION","")=="0.7" && Codecov.submit(Codecov.process_folder())'
