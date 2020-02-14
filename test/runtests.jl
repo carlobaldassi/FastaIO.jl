@@ -59,27 +59,23 @@ const fastadata_char = map(x->(x[1],Vector{Char}(x[2])), fastadata_ascii)
 
 function test_fastaread(T::Type, infile, fastadata)
     FastaReader(infile, T) do fr
-    @testset "collect(fr)" begin
+        # collect
         @test collect(fr) == fastadata
-    end
 
+        # iterate
         rewind(fr)
-
-    @testset "iterate(fr)" begin
         for (desc, seq) in fr
             @test desc == fastadata[fr.num_parsed][1]
             @test seq == fastadata[fr.num_parsed][2]
         end
-    end
 
+        # readentry
         rewind(fr)
-    @testset "readentry(fr)" begin
         while !eof(fr)
             desc, seq = readentry(fr)
             @test desc == fastadata[fr.num_parsed][1]
             @test seq == fastadata[fr.num_parsed][2]
         end
-    end
     end
 end
 
@@ -113,7 +109,6 @@ function test_fastawrite(infile, outfile, fastadata)
                 push!(fd_plain, seq[i+1:j])
                 i = j
             end
-            #push!(fd_plain, seq)
         end
         write(fw, fd_plain)
     end
@@ -124,22 +119,23 @@ function test_fastawrite(infile, outfile, fastadata)
     @test readfasta(outfile) == fastadata
 
     # writefasta (dict)
-    ## how to do this in a backward-compatible way?
-    ##   fd_dict = Dict(desc=>seq for (desc, seq) in fastadata)
-    fd_dict = Dict(); for (desc, seq) in fastadata; fd_dict[desc]=seq; end
+    fd_dict = Dict(desc=>seq for (desc, seq) in fastadata)
     writefasta(outfile, fd_dict)
     @test sort!(readfasta(outfile)) == sort(fastadata)
     return
 end
 
-@testset "reading test.fasta$(suffix) as $T" for
-    suffix in ["", ".gz", ".win", ".win.gz", ".no_eof", ".no_eof.gz", ".blanklines", ".blanklines.gz"],
-    (T, fastadata) in [(Vector{UInt8}, fastadata_uint8),
-                       (Vector{Char}, fastadata_char),
-                       (String, fastadata_ascii)]
+suffixes = ["", ".gz", ".win", ".win.gz", ".no_eof", ".no_eof.gz", ".blanklines", ".blanklines.gz"]
+types_and_data = [(Vector{UInt8}, fastadata_uint8),
+                  (Vector{Char}, fastadata_char),
+                  (String, fastadata_ascii)]
 
-    infile = joinpath(dirname(Base.source_path()), "test.fasta" * suffix)
-    outfile = joinpath(dirname(Base.source_path()), "test_out.fasta" * suffix)
+padlen = maximum(length.(suffixes)) + maximum(length.("$T" for (T,_) in types_and_data))
+padder(s, T) = " "^(padlen - length(s) - length("$T"))
+
+@testset "reading test.fasta$(suffix) as $T$(padder(suffix,T))" for suffix in suffixes, (T, fastadata) in types_and_data
+    infile = joinpath(@__DIR__, "test.fasta" * suffix)
+    outfile = joinpath(@__DIR__, "test_out.fasta" * suffix)
 
     test_fastaread(T, infile, fastadata)
 
@@ -151,7 +147,7 @@ end
 end
 
 @testset "reading invalid fasta #$i" for i in 1:4
-    infile = joinpath(dirname(Base.source_path()), "invalid_test_$i.fasta.gz")
+    infile = joinpath(@__DIR__, "invalid_test_$i.fasta.gz")
 
     @test_throws Exception readfasta(infile)
     @test_throws Exception FastaReader(infile) do fr
@@ -161,10 +157,10 @@ end
     end
 end
 
-outfile = joinpath(dirname(Base.source_path()), "invalid_test_out.fasta.gz")
+outfile = joinpath(@__DIR__, "invalid_test_out.fasta.gz")
 
 @testset "writing invalid fasta #$i" for i in 2:6
-    infile = joinpath(dirname(Base.source_path()), "invalid_test_$i.fasta.gz")
+    infile = joinpath(@__DIR__, "invalid_test_$i.fasta.gz")
 
     try
         @test_throws ErrorException FastaWriter(outfile) do fw
@@ -179,28 +175,30 @@ outfile = joinpath(dirname(Base.source_path()), "invalid_test_out.fasta.gz")
     end
 end
 
-const invalid_fastadata_entries = [("DE\nSC", "DATA" ),
-                                   (""      , "DATA" ),
-                                   ("DESC"  , ""     ),
-                                   ("ΔΕΣΞ"  , "DATA" ),
-                                   ("DESC"  , "ΔΑΤΑ" ),
-                                   ("DESC"  , "DA>TA")]
+@testset "invlid fasta data" begin
+    invalid_fastadata_entries = [("DE\nSC", "DATA" ),
+                                 (""      , "DATA" ),
+                                 ("DESC"  , ""     ),
+                                 ("ΔΕΣΞ"  , "DATA" ),
+                                 ("DESC"  , "ΔΑΤΑ" ),
+                                 ("DESC"  , "DA>TA")]
 
-for (desc, data) in invalid_fastadata_entries
-    try
-        @test_throws Exception FastaWriter(outfile) do fw
-            writeentry(fw, desc, data)
+    for (desc, data) in invalid_fastadata_entries
+        try
+            @test_throws Exception FastaWriter(outfile) do fw
+                writeentry(fw, desc, data)
+            end
+        finally
+            isfile(outfile) && rm(outfile)
         end
-    finally
-        isfile(outfile) && rm(outfile)
     end
-end
 
-for invalid_fastadata in [[ife] for ife in invalid_fastadata_entries]
-    try
-        @test_throws Exception writefasta(outfile, invalid_fastadata)
-    finally
-        isfile(outfile) && rm(outfile)
+    for invalid_fastadata in [[ife] for ife in invalid_fastadata_entries]
+        try
+            @test_throws Exception writefasta(outfile, invalid_fastadata)
+        finally
+            isfile(outfile) && rm(outfile)
+        end
     end
 end
 
