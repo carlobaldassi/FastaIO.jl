@@ -38,7 +38,7 @@ julia> FastaWriter("somefile.fasta") do fw
 ## Installation and usage
 
 
-To install the module, use Julia's package manager: start pkg mode by pressing <kbd>]</kbd> and then enter:
+To install the module, use Julia's package manager: start pkg mode by pressing `]` and then enter:
 
 ```
 (v1.3) pkg> add FastaIO
