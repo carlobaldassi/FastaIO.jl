@@ -8,7 +8,7 @@ using GZip
 #   the sequence type could be
 #   different, e.g. Vector{Uint8},
 #   Vector{AminoAcid} etc.
-fastadata = {
+fastadata = [
     ("ITEM1","""
      -----------STVELTKEN-F--D-Q
      E--F-V--LI--------D-----F--
@@ -23,7 +23,7 @@ fastadata = {
      ----------NLESVEQFD--------
      -------G--K-S--VF--------M-
      -D------L------A-----
-     """)}
+     """)]
 
 function write_fasta_data(filename::String, data)
     println("Writing $(length(data)) entries to file $filename")
@@ -42,15 +42,14 @@ function write_fasta_data(filename::String, data)
 
     println("This is the content of the file:")
     gzopen(filename) do f
-        println(readall(f))
+        println(read(f, String))
     end
 end
 
-examples_dir = dirname(Base.source_path())
 # note: gzip compression is used because the filename ends with .gz
-write_fasta_data(joinpath(examples_dir, "example_out.fasta.gz"), fastadata)
+write_fasta_data(joinpath(@__DIR__, "example_out.fasta.gz"), fastadata)
 
 # remove the file
-rm(joinpath(examples_dir, "example_out.fasta.gz"))
+rm(joinpath(@__DIR__, "example_out.fasta.gz"))
 
-end
+end # module

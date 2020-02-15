@@ -1,23 +1,11 @@
-# example 3: read all at once with readall (or readfasta)
+# example 3: read all at once with readfasta
 #            default return type (String)
 
 module FastaIOExample3
 using FastaIO
 
 function read_fasta_file(filename::String)
-    # note: FastaReader can take a readable IO descriptor as
-    #       argument instead of a filename; it also supports
-    #       do-notation:
-    #
-    #       FastaReader(filename) do fr
-    #         # do something
-    #       end
-    fr = FastaReader(filename)
-
-    out = readall(fr)
-
-    # alternatively:
-    # out = readfasta(filename)
+    out = readfasta(filename)
 
     n = 0
     for (desc, seq) in out
@@ -28,6 +16,6 @@ function read_fasta_file(filename::String)
     println("read $n entries")
 end
 
-examples_dir = dirname(Base.source_path())
-read_fasta_file(joinpath(examples_dir, "example.fasta.gz"))
-end
+read_fasta_file(joinpath(@__DIR__, "example.fasta.gz"))
+
+end # module

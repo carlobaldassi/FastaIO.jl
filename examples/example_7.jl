@@ -44,15 +44,14 @@ function write_fasta_data(filename::String, data)
 
     println("This is the content of the file:")
     gzopen(filename) do f
-        println(readall(f))
+        println(read(f, String))
     end
 end
 
-examples_dir = dirname(Base.source_path())
 # note: gzip compression is used because the filename ends with .gz
-write_fasta_data(joinpath(examples_dir, "example_out.fasta.gz"), fastadata)
+write_fasta_data(joinpath(@__DIR__, "example_out.fasta.gz"), fastadata)
 
 # remove the file
-rm(joinpath(examples_dir, "example_out.fasta.gz"))
+rm(joinpath(@__DIR__, "example_out.fasta.gz"))
 
-end
+end # module

@@ -22,8 +22,7 @@ export
     writeentry,
     writefasta
 
-import Base.close, Base.show, Base.eof, Base.write
-import Base: iterate
+import Base: close, show, eof, write, iterate
 
 const fasta_buffer_size = 4096
 
@@ -149,16 +148,12 @@ function read_chunk_ll(fr::FastaReader, s::IO)
 end
 
 function read_chunk(fr::FastaReader)
-    if fr.is_eof
-        return
-    end
+    fr.is_eof && return
     ret = read_chunk_ll(fr, fr.f)
     ret == -1 && error("read failure")
     fr.rbuf_sz = ret
     fr.rbuf_pos = 1
-    if ret == 0
-        fr.is_eof = true
-    end
+    ret == 0 && (fr.is_eof = true)
     return
 end
 
@@ -166,9 +161,7 @@ function readline(fr::FastaReader)
     fr.lbuf_sz = 0
     found = false
     while !fr.is_eof
-        if fr.rbuf_pos == 0
-            read_chunk(fr::FastaReader)
-        end
+        fr.rbuf_pos == 0 && read_chunk(fr::FastaReader)
         i = fr.rbuf_pos
         cr = false
         while i <= fr.rbuf_sz
@@ -185,25 +178,18 @@ function readline(fr::FastaReader)
         chunk_len = i - fr.rbuf_pos + 1
         free_sbuf = length(fr.lbuffer) - fr.lbuf_sz
         gap = chunk_len - free_sbuf
-        if gap > 0
-            resize!(fr.lbuffer, length(fr.lbuffer) + gap)
-        end
+        gap > 0 && resize!(fr.lbuffer, length(fr.lbuffer) + gap)
 
-        #fr.lbuffer[fr.lbuf_sz + (1:chunk_len)] = fr.rbuffer[fr.rbuf_pos:i]
         copyto!(fr.lbuffer, fr.lbuf_sz + 1, fr.rbuffer, fr.rbuf_pos, chunk_len)
         fr.lbuf_sz += chunk_len
 
         i += 2 + cr
-        if i > fr.rbuf_sz
-            i = 0
-        end
+        i > fr.rbuf_sz && (i = 0)
         fr.rbuf_pos = i
         found && break
     end
-    if !fr.is_eof && fr.lbuf_sz == 0
-        # empty line, ignore and run again
-        return readline(fr)
-    end
+    # if we found an empty line, ignore it and run again
+    !fr.is_eof && fr.lbuf_sz == 0 && return readline(fr)
     return
 end
 
@@ -224,10 +210,7 @@ function _next_step(fr::FastaReader)
             break
         end
         gap = fr.lbuf_sz - (length(fr.mbuffer) - fr.mbuf_sz)
-        if gap > 0
-            resize!(fr.mbuffer, length(fr.mbuffer) + gap)
-        end
-        #fr.mbuffer[fr.mbuf_sz + (1:fr.lbuf_sz)] = fr.lbuffer[1:fr.lbuf_sz]
+        gap > 0 && resize!(fr.mbuffer, length(fr.mbuffer) + gap)
         copyto!(fr.mbuffer, fr.mbuf_sz + 1, fr.lbuffer, 1, fr.lbuf_sz)
         fr.mbuf_sz += fr.lbuf_sz
     end
@@ -252,9 +235,7 @@ Base.IteratorSize(fr::FastaReader) = Base.SizeUnknown()
 function iterate(fr::FastaReader)
     rewind(fr)
     readline(fr)
-    if fr.lbuf_sz == 0
-        error("empty FASTA file")
-    end
+    fr.lbuf_sz == 0 && error("empty FASTA file")
     return fr.is_eof ? nothing : (_next(fr), nothing)
 end
 function iterate(fr::FastaReader, x::Nothing)
@@ -278,9 +259,7 @@ function readentry(fr::FastaReader)
     fr.is_eof && throw(EOFError())
     if fr.num_parsed == 0
         readline(fr)
-        if fr.lbuf_sz == 0
-            error("empty FASTA file")
-        end
+        fr.lbuf_sz == 0 && error("empty FASTA file")
     end
     item = _next(fr)
     return item
@@ -303,9 +282,8 @@ close(fr)
 """
 eof(fr::FastaReader) = fr.is_eof
 
-function show(io::IO, fr::FastaReader{T}) where {T}
+show(io::IO, fr::FastaReader{T}) where {T} =
     print(io, "FastaReader(input=\"$(fr.f)\", out_type=$T, num_parsed=$(fr.num_parsed), eof=$(fr.is_eof))")
-end
 
 """
     readfasta(file::Union{String,IO}, [sequence_type::Type = String])
@@ -335,12 +313,8 @@ mutable struct FastaWriter
         return fw
     end
     function FastaWriter(filename::AbstractString, mode::AbstractString = "w")
-        if endswith(filename, ".gz")
-            of = gzopen
-        else
-            of = open
-        end
-        fw = new(of(filename, mode), false, 0, 0, false, 0, 1, true, true)
+        fopen = endswith(filename, ".gz") ? gzopen : open
+        fw = new(fopen(filename, mode), false, 0, 0, false, 0, 1, true, true)
         finalizer(close, fw)
         return fw
     end
@@ -469,7 +443,7 @@ function write(fw::FastaWriter, c)
     end
     if fw.pos == 80
         if !fw.in_seq
-            warn("description line longer than 80 characters (entry $(fw.entry) of FASTA input)")
+            @warn("description line longer than 80 characters (entry $(fw.entry) of FASTA input)")
         else
             write(fw.f, '\n')
             fw.pos = 0
@@ -520,14 +494,12 @@ function writeentry(fw::FastaWriter, desc::AbstractString, seq)
     !fw.at_start && write(fw, '\n')
     desc = strip(String(desc))
     isascii(desc) || error("description must be ASCII (entry $(fw.entry+1) of FASTA input)")
-    if findfirst(isequal('\n'), desc) ∉ (nothing, 0) # TODO: remove 0 when support for julia 0.6 is dropped
+    if findfirst(==('\n'), desc) ≢ nothing
         error("newlines are not allowed within description (entry $(fw.entry+1) of FASTA input)")
     end
     write(fw, '>')
     write(fw, desc)
     write(fw, '\n')
-    #write(fw, seq)
-    #write(fw, '\n')
     fw.entry_chars = writefastaseq(fw.f, seq, fw.entry, false)
     fw.in_seq = true
     fw.parsed_nl = false
@@ -548,7 +520,7 @@ function close(fw::FastaWriter)
         write(fw.f, '\n')
         flush(fw.f)
     catch err
-        isa(err, EOFError) || rethrow(err)
+        err isa EOFError || rethrow(err)
     end
     fw.pos = 0
     fw.parsed_nl = true
@@ -571,7 +543,7 @@ function writefastaseq(io::IO, seq, entry::Int, nl::Bool = true)
         ch = convert(Char, c)
         isascii(ch) || error("invalid (non-ASCII) character: $c (entry $entry of FASTA input)")
         isspace(ch) && continue
-        ch != '>' || error("character '>' not allowed in sequence data (entry $entry of FASTA input)")
+        ch == '>' && error("character '>' not allowed in sequence data (entry $entry of FASTA input)")
         write(io, ch)
         i += 1
         entry_chars += 1
@@ -591,14 +563,12 @@ function writefasta(io::IO, data)
         entry += 1
         desc = strip(String(desc))
         isascii(desc) || error("description must be ASCII (entry $entry of FASTA input)")
-        if isempty(desc)
-            error("empty description (entry $entry of FASTA input")
-        end
-        if findfirst(isequal('\n'), desc) ∉ (nothing, 0) # TODO: remove 0 when support for julia 0.6 is dropped
+        isempty(desc) && error("empty description (entry $entry of FASTA input")
+        if findfirst(==('\n'), desc) ≢ nothing
             error("newlines are not allowed within description (entry $entry of FASTA input)")
         end
         if length(desc) > 79
-            warn("description line longer than 80 characters (entry $entry of FASTA input)")
+            @warn("description line longer than 80 characters (entry $entry of FASTA input)")
         end
         println(io, ">", desc)
         entry_chars = writefastaseq(io, seq, entry)
@@ -629,12 +599,8 @@ The `mode` flag determines how the `filename` is open; use `"a"` to append the d
 file.
 """
 function writefasta(filename::AbstractString, data, mode::AbstractString = "w")
-    if endswith(filename, ".gz")
-        of = gzopen
-    else
-        of = open
-    end
-    of(filename, mode) do f
+    fopen = endswith(filename, ".gz") ? gzopen : open
+    fopen(filename, mode) do f
         writefasta(f, data)
     end
 end

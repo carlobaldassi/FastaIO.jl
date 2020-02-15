@@ -1,51 +1,44 @@
 # FastaIO.jl
 
-| **Documentation**                                                               | **PackageEvaluator**                                            | **Build Status**                                                                                |
-|:-------------------------------------------------------------------------------:|:---------------------------------------------------------------:|:-----------------------------------------------------------------------------------------------:|
-| [![][docs-stable-img]][docs-stable-url] [![][docs-latest-img]][docs-latest-url] | [![][pkg-0.6-img]][pkg-0.6-url] [![][pkg-0.7-img]][pkg-0.7-url] | [![][travis-img]][travis-url] [![][appveyor-img]][appveyor-url] [![][codecov-img]][codecov-url] |
+| **Documentation**                                                         | **Build Status**                                             |
+|:-------------------------------------------------------------------------:|:------------------------------------------------------------:|
+| [![][docs-stable-img]][docs-stable-url] [![][docs-dev-img]][docs-dev-url] | [![][travis-img]][travis-url][![][codecov-img]][codecov-url] |
 
 Utilities to read/write FASTA format files in [Julia].
 
 ## Installation and usage
 
-To install the module, use Julia's package manager:
+### Installation
+
+To install the module, use Julia's package manager: start pkg mode by pressing <kbd>]</kbd> and then enter:
 
 ```
-julia> Pkg.add("FastaIO")
+(v1.3) pkg> add TextWrap
 ```
 
 Dependencies will be installed automatically.
 The module can then be loaded like any other Julia module:
 
 ```
-julia> using FastaIO
+julia> using TextWrap
 ```
 
 ### Documentation
 
 - [**STABLE**][docs-stable-url] &mdash; **most recently tagged version of the documentation.**
-- [**LATEST**][docs-latest-url] &mdash; *in-development version of the documentation.*
+- [**DEV**][docs-dev-url] &mdash; *in-development version of the documentation.*
 
 See also the examples in the `examples/` directory.
-
 
 [Julia]: http://julialang.org
 
 [docs-stable-img]: https://img.shields.io/badge/docs-stable-blue.svg
-[docs-stable-url]: https://carlobaldassi.github.io/FastaIO.jl/stable
-[docs-latest-img]: https://img.shields.io/badge/docs-latest-blue.svg
-[docs-latest-url]: https://carlobaldassi.github.io/FastaIO.jl/latest
+[docs-stable-url]: https://carlobaldassi.github.io/TextWrap.jl/stable
+[docs-dev-img]: https://img.shields.io/badge/docs-dev-blue.svg
+[docs-dev-url]: https://carlobaldassi.github.io/TextWrap.jl/dev
 
-[travis-img]: https://travis-ci.org/carlobaldassi/FastaIO.jl.svg?branch=master
-[travis-url]: https://travis-ci.org/carlobaldassi/FastaIO.jl
+[travis-img]: https://travis-ci.com/carlobaldassi/TextWrap.jl.svg?branch=master
+[travis-url]: https://travis-ci.com/carlobaldassi/TextWrap.jl
 
-[appveyor-img]: https://ci.appveyor.com/api/projects/status/18ijkex153jkubw5/branch/master?svg=true
-[appveyor-url]: https://ci.appveyor.com/project/carlobaldassi/fastaio-jl/branch/master
-
-[codecov-img]: https://codecov.io/gh/carlobaldassi/FastaIO.jl/branch/master/graph/badge.svg
-[codecov-url]: https://codecov.io/gh/carlobaldassi/FastaIO.jl
-
-[pkg-0.6-img]: http://pkg.julialang.org/badges/FastaIO_0.6.svg
-[pkg-0.6-url]: http://pkg.julialang.org/?pkg=FastaIO&ver=0.6
-[pkg-0.7-img]: http://pkg.julialang.org/badges/FastaIO_0.7.svg
-[pkg-0.7-url]: http://pkg.julialang.org/?pkg=FastaIO&ver=0.7
+[codecov-img]: https://codecov.io/gh/carlobaldassi/TextWrap.jl/branch/master/graph/badge.svg
+[codecov-url]: https://codecov.io/gh/carlobaldassi/TextWrap.jl

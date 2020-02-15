@@ -2,7 +2,7 @@ using Documenter, FastaIO
 
 makedocs(
     modules  = [FastaIO],
-    format   = :html,
+    format = Documenter.HTML(prettyurls = "--local" ∉ ARGS),
     sitename = "FastaIO.jl",
     pages    = Any[
         "Home" => "index.md",
@@ -11,8 +11,4 @@ makedocs(
 
 deploydocs(
     repo   = "github.com/carlobaldassi/FastaIO.jl.git",
-    target = "build",
-    deps = nothing,
-    make = nothing,
-    julia  = "0.7"
 )

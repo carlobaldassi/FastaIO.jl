@@ -1,0 +1,17 @@
+name = "FastaIO"
+uuid = "a0c94c4b-ebed-5953-b5fc-82fe598ac79f"
+version = "1.0.0"
+author = ["Carlo Baldassi <carlobaldassi@gmail.com>"]
+
+[deps]
+GZip = "92fee26a-97fe-5a0c-ad85-20a5f3185b63"
+
+[compat]
+GZip = "0.5"
+julia = "1"
+
+[extras]
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+
+[targets]
+test = ["Test"]

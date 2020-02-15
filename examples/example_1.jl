@@ -20,6 +20,6 @@ function read_fasta_file(filename::String)
     println("read $(fr.num_parsed) entries")
 end
 
-examples_dir = dirname(Base.source_path())
-read_fasta_file(joinpath(examples_dir, "example.fasta.gz"))
-end
+read_fasta_file(joinpath(@__DIR__, "example.fasta.gz"))
+
+end # module
