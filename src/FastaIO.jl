@@ -320,11 +320,11 @@ mutable struct FastaWriter
     end
 end
 
-FastaWriter() = FastaWriter(STDOUT)
+FastaWriter() = FastaWriter(stdout)
 
 """
     FastaWriter(filename::AbstractString, [mode::String = "w"])
-    FastaWriter([io::IO = STDOUT])
+    FastaWriter([io::IO = stdout])
     FastaWriter(f::Function, args...)
 
 This creates an object which is able to write formatted FASTA files which conform to the specifications
@@ -553,9 +553,9 @@ function writefastaseq(io::IO, seq, entry::Int, nl::Bool = true)
 end
 
 """
-    writefasta([io::IO = STDOUT], data)
+    writefasta([io::IO = stdout], data)
 
-This version of the function writes to an already opened `IO` stream, defaulting to `STDOUT`.
+This version of the function writes to an already opened `IO` stream, defaulting to `stdout`.
 """
 function writefasta(io::IO, data)
     entry = 0
@@ -575,7 +575,7 @@ function writefasta(io::IO, data)
         entry_chars > 0 || error("empty sequence data (entry $entry of FASTA input)")
     end
 end
-writefasta(data) = writefasta(STDOUT, data)
+writefasta(data) = writefasta(stdout, data)
 
 """
     writefasta(filename::String, data, [mode::String = "w"])
