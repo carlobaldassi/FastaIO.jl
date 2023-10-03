@@ -1,7 +1,7 @@
 name = "FastaIO"
 uuid = "a0c94c4b-ebed-5953-b5fc-82fe598ac79f"
 author = ["Carlo Baldassi <carlobaldassi@gmail.com>"]
-version = "1.0.1"
+version = "1.0.2"
 
 [deps]
 GZip = "92fee26a-97fe-5a0c-ad85-20a5f3185b63"
