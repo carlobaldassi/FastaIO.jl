@@ -72,8 +72,8 @@ The FASTA format which is assumed by this module is as follows:
    at the beginning or end of the description
 5. Empty lines are ignored (note however that lines containing whitespace will still trigger an error)
 
-When writing, description lines longer than 80 characters will trigger a warning message; sequence data is
-formatted in lines of 80 characters each; extra whitespace is silently discarded.
+When writing, description lines longer than 80 characters will trigger a warning message (this can be optionally
+disabled); sequence data is formatted in lines of 80 characters each; extra whitespace is silently discarded.
 No other restriction is put on the content of the sequence data, except that the `>` character is
 forbidden.
 

@@ -3,6 +3,7 @@ module FastaTests
 using FastaIO
 using GZip
 using Test
+using Logging
 
 const fastadata_ascii = Any[
     ("A0ADS9_STRAM/3-104",
@@ -202,4 +203,63 @@ end
     end
 end
 
+outfile = joinpath(@__DIR__, "long_desc_test_out.fasta.gz")
+
+@testset "desc length checks" begin
+    longdesc = ">" * "X"^100
+    data = "DATA"
+
+    FastaWriter(devnull) do fw
+        b = IOBuffer()
+        with_logger(SimpleLogger(b, Logging.Debug)) do
+            write(fw, longdesc)
+            write(fw, data)
+        end
+        s = String(take!(b))
+        @test !isempty(s)
+
+        fw.check_description = false
+        b = IOBuffer()
+        with_logger(SimpleLogger(b, Logging.Debug)) do
+            write(fw, longdesc)
+            write(fw, data)
+        end
+        s = String(take!(b))
+        @test isempty(s)
+    end
+
+    b = IOBuffer()
+    with_logger(SimpleLogger(b, Logging.Debug)) do
+        writefasta(devnull, [(longdesc, data)])
+    end
+    s = String(take!(b))
+    @test !isempty(s)
+
+    b = IOBuffer()
+    with_logger(SimpleLogger(b, Logging.Debug)) do
+        writefasta(devnull, [(longdesc, data)], check_description=false)
+    end
+    s = String(take!(b))
+    @test isempty(s)
+
+    try
+        b = IOBuffer()
+        with_logger(SimpleLogger(b, Logging.Debug)) do
+            writefasta(outfile, [(longdesc, data)])
+        end
+        s = String(take!(b))
+        @test !isempty(s)
+
+        b = IOBuffer()
+        with_logger(SimpleLogger(b, Logging.Debug)) do
+            writefasta(outfile, [(longdesc, data)], check_description=false)
+        end
+        s = String(take!(b))
+        @test isempty(s)
+    finally
+        isfile(outfile) && rm(outfile)
+    end
+
 end
+
+end # module FastaTests
