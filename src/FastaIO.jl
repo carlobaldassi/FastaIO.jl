@@ -307,14 +307,15 @@ mutable struct FastaWriter
     entry::Int
     own_f::Bool
     at_start::Bool
+    check_description::Bool
     function FastaWriter(io::IO)
-        fw = new(io, false, 0, 0, false, 0, 1, false, true)
+        fw = new(io, false, 0, 0, false, 0, 1, false, true, true)
         finalizer(close, fw)
         return fw
     end
     function FastaWriter(filename::AbstractString, mode::AbstractString = "w")
         fopen = endswith(filename, ".gz") ? gzopen : open
-        fw = new(fopen(filename, mode), false, 0, 0, false, 0, 1, true, true)
+        fw = new(fopen(filename, mode), false, 0, 0, false, 0, 1, true, true, true)
         finalizer(close, fw)
         return fw
     end
@@ -351,6 +352,9 @@ file.
 
 The `FastaWriter` object has an `entry::Int` field which stores the number of the entry which is
 currently being written.
+
+After creating the object, you can set the `check_description` field to `false` to disable the warning
+given when description lines are too long.
 """
 function FastaWriter(f::Function, args...)
     fw = FastaWriter(args...)
@@ -442,7 +446,7 @@ function write(fw::FastaWriter, c)
         error("character '>' not allowed in sequence data (entry $(fw.entry) of FASTA input)")
     end
     if fw.pos == 80
-        if !fw.in_seq
+        if !fw.in_seq && fw.check_description
             @warn("description line longer than 80 characters (entry $(fw.entry) of FASTA input)")
         else
             write(fw.f, '\n')
@@ -553,11 +557,13 @@ function writefastaseq(io::IO, seq, entry::Int, nl::Bool = true)
 end
 
 """
-    writefasta([io::IO = stdout], data)
+    writefasta([io::IO = stdout], data; check_description=true)
 
 This version of the function writes to an already opened `IO` stream, defaulting to `stdout`.
+
+Set the keyword `check_description=false` to disable the warning message given when description lines are too long.
 """
-function writefasta(io::IO, data)
+function writefasta(io::IO, data; check_description::Bool=true)
     entry = 0
     for (desc, seq) in data
         entry += 1
@@ -567,7 +573,7 @@ function writefasta(io::IO, data)
         if findfirst(==('\n'), desc) ≢ nothing
             error("newlines are not allowed within description (entry $entry of FASTA input)")
         end
-        if length(desc) > 79
+        if length(desc) > 79 && check_description
             @warn("description line longer than 80 characters (entry $entry of FASTA input)")
         end
         println(io, ">", desc)
@@ -575,10 +581,10 @@ function writefasta(io::IO, data)
         entry_chars > 0 || error("empty sequence data (entry $entry of FASTA input)")
     end
 end
-writefasta(data) = writefasta(stdout, data)
+writefasta(data; kw...) = writefasta(stdout, data; kw...)
 
 """
-    writefasta(filename::String, data, [mode::String = "w"])
+    writefasta(filename::String, data, [mode::String = "w"]; check_description=true)
 
 This function dumps data to a FASTA file, auto-formatting it so to follow the specifications detailed in
 the section titled [The FASTA format](@ref). The `data` can be anything which is iterable and which produces
@@ -597,11 +603,13 @@ If the `filename` ends with `.gz`, the result will be a gzip-compressed file.
 
 The `mode` flag determines how the `filename` is open; use `"a"` to append the data to an existing
 file.
+
+Set the keyword `check_description=false` to disable the warning message given when description lines are too long.
 """
-function writefasta(filename::AbstractString, data, mode::AbstractString = "w")
+function writefasta(filename::AbstractString, data, mode::AbstractString = "w"; check_description=true)
     fopen = endswith(filename, ".gz") ? gzopen : open
     fopen(filename, mode) do f
-        writefasta(f, data)
+        writefasta(f, data; check_description)
     end
 end
 
