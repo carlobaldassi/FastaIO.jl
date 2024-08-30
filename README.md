@@ -1,8 +1,6 @@
 # FastaIO.jl
 
-| **Documentation**                                                         | **Build Status**                                             |
-|:-------------------------------------------------------------------------:|:------------------------------------------------------------:|
-| [![][docs-stable-img]][docs-stable-url] [![][docs-dev-img]][docs-dev-url] | [![][travis-img]][travis-url][![][codecov-img]][codecov-url] |
+[![DOCS][docs-img]][docs-url] [![CI][CI-img]][CI-url] [![CODECOV][codecov-img]][codecov-url]
 
 Utilities to read/write FASTA format files in [Julia].
 
@@ -13,7 +11,7 @@ Utilities to read/write FASTA format files in [Julia].
 To install the module, use Julia's package manager: start pkg mode by pressing <kbd>]</kbd> and then enter:
 
 ```
-(v1.3) pkg> add FastaIO
+(v1.10) pkg> add FastaIO
 ```
 
 Dependencies will be installed automatically.
@@ -25,20 +23,16 @@ julia> using FastaIO
 
 ### Documentation
 
-- [**STABLE**][docs-stable-url] &mdash; **most recently tagged version of the documentation.**
-- [**DEV**][docs-dev-url] &mdash; *in-development version of the documentation.*
-
-See also the examples in the `examples/` directory.
+- The manual is [HERE][docs-url].
+- See also the examples in the [examples directory](examples).
 
 [Julia]: http://julialang.org
 
-[docs-stable-img]: https://img.shields.io/badge/docs-stable-blue.svg
-[docs-stable-url]: https://carlobaldassi.github.io/FastaIO.jl/stable
-[docs-dev-img]: https://img.shields.io/badge/docs-dev-blue.svg
-[docs-dev-url]: https://carlobaldassi.github.io/FastaIO.jl/dev
-
-[travis-img]: https://travis-ci.com/carlobaldassi/FastaIO.jl.svg?branch=master
-[travis-url]: https://travis-ci.com/carlobaldassi/FastaIO.jl
+[docs-img]: https://img.shields.io/badge/docs-stable-blue.svg
+[docs-url]: https://carlobaldassi.github.io/FastaIO.jl/stable
 
 [codecov-img]: https://codecov.io/gh/carlobaldassi/FastaIO.jl/branch/master/graph/badge.svg
 [codecov-url]: https://codecov.io/gh/carlobaldassi/FastaIO.jl
+
+[CI-img]: https://github.com/carlobaldassi/FastaIO.jl/actions/workflows/ci.yml/badge.svg
+[CI-url]: https://github.com/carlobaldassi/FastaIO.jl/actions/workflows/ci.yml
