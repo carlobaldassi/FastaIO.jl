@@ -446,11 +446,13 @@ function write(fw::FastaWriter, c)
         error("character '>' not allowed in sequence data (entry $(fw.entry) of FASTA input)")
     end
     if fw.pos == 80
-        if !fw.in_seq && fw.check_description
-            @warn("description line longer than 80 characters (entry $(fw.entry) of FASTA input)")
-        else
+        if fw.in_seq
             write(fw.f, '\n')
             fw.pos = 0
+        else
+            if fw.check_description
+                @warn("description line longer than 80 characters (entry $(fw.entry) of FASTA input)")
+            end
         end
     end
     write(fw.f, ch)

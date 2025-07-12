@@ -262,4 +262,29 @@ outfile = joinpath(@__DIR__, "long_desc_test_out.fasta.gz")
 
 end
 
+outfile = joinpath(@__DIR__, "long_desc_integrity_test_out.fasta")
+
+@testset "long desc integrity" begin
+    long_header = join(fill("123456789_", 10))
+    sequence = "AGCT"
+
+    try
+        FastaWriter(outfile) do fw
+            @test_logs (:warn, r"description line longer than 80 characters") begin
+                writeentry(fw, long_header, sequence)
+            end
+
+            fw.check_description = false
+            @test_nowarn writeentry(fw, long_header, sequence)
+        end
+
+        result = readfasta(outfile)
+
+        @test length(result) == 2
+        @test result[1][1] == result[2][1] == long_header
+    finally
+        isfile(outfile) && rm(outfile)
+    end
+end
+
 end # module FastaTests
